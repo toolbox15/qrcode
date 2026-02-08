@@ -221,6 +221,12 @@
             color: white;
         }
 
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--light);
+            border: 1px solid var(--glass-border);
+        }
+
         .qr-preview-container {
             display: flex;
             flex-direction: column;
@@ -655,10 +661,6 @@
             border-radius: 4px;
         }
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--primary);
-        }
-
         .redirect-page {
             display: flex;
             flex-direction: column;
@@ -693,6 +695,7 @@
             font-family: monospace;
             word-break: break-all;
             max-width: 90%;
+            color: #34d399;
         }
     </style>
 </head>
@@ -746,7 +749,7 @@
                                 <label class="form-label">Destination URL *</label>
                                 <input type="url" class="form-input" id="qrContent" placeholder="https://instagram.com/yourname" required>
                                 <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--gray);">
-                                    This is where people will be redirected after scanning (Instagram, Website, etc.)
+                                    This is where people will be redirected after scanning
                                 </div>
                             </div>
                             
@@ -764,7 +767,7 @@
                     <div class="panel">
                         <div class="panel-header">
                             <div class="panel-title">Preview & Print</div>
-                            <div class="panel-subtitle">Test: Scan → Track → Redirect to your URL</div>
+                            <div class="panel-subtitle">Test: Scan → Track → Redirect</div>
                         </div>
                         
                         <div class="qr-preview-container" id="previewContainer">
@@ -786,7 +789,7 @@
                         <div class="print-hint" id="printHint" style="display: none;">
                             <span>ℹ️</span>
                             <div>
-                                <strong>How it works:</strong> QR contains your GitHub tracker URL. When scanned, it logs the visit, then instantly redirects to your Destination URL (Instagram, etc.).
+                                <strong>How it works:</strong> The QR contains encoded data with your destination URL. When scanned, it visits your tracker, logs the scan, then redirects to your destination.
                             </div>
                         </div>
                     </div>
@@ -873,32 +876,32 @@
         <div class="redirect-spinner"></div>
         <h2>Scan Logged!</h2>
         <p style="color: var(--gray); margin-top: 1rem;">
-            Tracking scan from <strong id="scan-source">Unknown</strong>
+            Tracking scan from <strong id="scan-source">...</strong>
         </p>
         <div class="url-display" id="target-url-display">
             Redirecting to: <span id="target-url">...</span>
         </div>
         <p style="color: var(--gray); font-size: 0.9rem; margin-top: 1rem;">
-            You should be redirected automatically in 2 seconds...
+            You should be redirected automatically...
         </p>
         <button class="btn btn-primary" id="manual-redirect-btn" style="margin-top: 2rem; width: auto; display: none;">
-            Click to Redirect
+            Click to Redirect Now
         </button>
     </div>
 
     <script>
-        // Data Management
+        // Data Management - Only for dashboard (your device)
         let qrDatabase = JSON.parse(localStorage.getItem('myQRTracker')) || [];
         let currentQR = null;
 
         // Initialize - Check if this is a scan or dashboard
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
-            const scanId = urlParams.get('scan');
+            const qrData = urlParams.get('data');
             
-            if (scanId) {
+            if (qrData) {
                 // Someone scanned a QR code - handle redirect
-                handleScanRedirect(scanId);
+                handleScanRedirect(qrData);
             } else {
                 // This is the admin/dashboard view
                 document.getElementById('app-container').style.display = 'block';
@@ -910,75 +913,72 @@
         });
 
         // HANDLE SCAN & REDIRECT TO DESTINATION URL
-        function handleScanRedirect(qrId) {
+        function handleScanRedirect(encodedData) {
             const container = document.getElementById('redirect-container');
             container.style.display = 'flex';
             
-            // Find the QR code in database
-            const qr = qrDatabase.find(q => q.id === qrId);
-            
-            if (!qr) {
-                // QR not found - show error
-                document.getElementById('scan-source').textContent = 'Unknown QR Code';
-                document.getElementById('target-url').textContent = 'Not found in database';
+            try {
+                // Decode the QR data
+                const jsonString = atob(decodeURIComponent(encodedData));
+                const qrData = JSON.parse(jsonString);
+                
+                // Display info
+                document.getElementById('scan-source').textContent = qrData.name || 'Unknown Location';
+                document.getElementById('target-url').textContent = qrData.url || 'No URL found';
+                
+                // Log scan to localStorage (for your dashboard when you visit later)
+                logScanToStorage(qrData);
+                
+                // Show manual button as backup
+                const manualBtn = document.getElementById('manual-redirect-btn');
+                manualBtn.style.display = 'inline-flex';
+                manualBtn.onclick = () => {
+                    window.location.href = qrData.url;
+                };
+                
+                // Auto-redirect after 1.5 seconds
+                setTimeout(() => {
+                    if (qrData.url) {
+                        window.location.href = qrData.url;
+                    } else {
+                        document.getElementById('target-url').textContent = 'Error: No destination URL';
+                        document.querySelector('.redirect-spinner').style.display = 'none';
+                    }
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Error decoding QR:', error);
+                document.getElementById('scan-source').textContent = 'Error';
+                document.getElementById('target-url').textContent = 'Invalid QR code data';
                 document.querySelector('.redirect-spinner').style.display = 'none';
-                return;
-            }
-            
-            // Show what we're doing
-            document.getElementById('scan-source').textContent = qr.name;
-            document.getElementById('target-url').textContent = qr.targetUrl;
-            
-            // Log the scan data
-            const scanData = {
-                timestamp: new Date().toISOString(),
-                userAgent: navigator.userAgent,
-                language: navigator.language,
-                platform: navigator.platform,
-                screenSize: `${screen.width}x${screen.height}`,
-                referrer: document.referrer || 'Direct'
-            };
-            
-            // Try to get geolocation
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        scanData.latitude = position.coords.latitude;
-                        scanData.longitude = position.coords.longitude;
-                        scanData.accuracy = position.coords.accuracy;
-                        saveScanAndRedirect(qr, scanData);
-                    },
-                    (error) => {
-                        // Location denied or error - still redirect
-                        scanData.locationError = error.message;
-                        saveScanAndRedirect(qr, scanData);
-                    },
-                    { timeout: 5000, enableHighAccuracy: true }
-                );
-            } else {
-                // Geolocation not supported
-                scanData.locationError = 'Not supported';
-                saveScanAndRedirect(qr, scanData);
             }
         }
 
-        function saveScanAndRedirect(qr, scanData) {
-            // Save scan to database
-            qr.scans++;
-            qr.scanHistory.unshift(scanData);
-            localStorage.setItem('myQRTracker', JSON.stringify(qrDatabase));
-            
-            // Show manual redirect button as backup
-            const manualBtn = document.getElementById('manual-redirect-btn');
-            manualBtn.style.display = 'inline-flex';
-            manualBtn.onclick = () => {
-                window.location.href = qr.targetUrl;
-            };
-            
-            // Auto-redirect after 2 seconds
-            setTimeout(() => {
-                window.location.href = qr.targetUrl;
-            }, 2000);
+        // Log scan to a shared storage that you can check later
+        function logScanToStorage(qrData) {
+            try {
+                // Get existing scans
+                let allScans = JSON.parse(localStorage.getItem('allQRScans') || '[]');
+                
+                // Add new scan
+                allScans.unshift({
+                    qrName: qrData.name,
+                    qrLocation: qrData.location,
+                    targetUrl: qrData.url,
+                    timestamp: new Date().toISOString(),
+                    userAgent: navigator.userAgent,
+                    language: navigator.language,
+                    platform: navigator.platform,
+                    screenSize: `${screen.width}x${screen.height}`
+                });
+                
+                // Keep only last 100 scans
+                allScans = allScans.slice(0, 100);
+                
+                localStorage.setItem('allQRScans', JSON.stringify(allScans));
+            } catch (e) {
+                console.error('Could not log scan:', e);
+            }
         }
 
         // DASHBOARD FUNCTIONS
@@ -1005,21 +1005,29 @@
             const targetUrl = document.getElementById('qrContent').value;
             const notes = document.getElementById('qrNotes').value;
             
-            // Create unique ID
-            const qrId = 'QR' + Date.now().toString(36).toUpperCase();
-            
-            // Build tracking URL - this is what the QR code contains
-            // When scanned, it comes to this page with ?scan=ID
-            const currentPageUrl = window.location.href.split('?')[0]; // Remove any existing params
-            const trackingUrl = `${currentPageUrl}?scan=${qrId}`;
-            
-            // Store QR data
-            currentQR = {
-                id: qrId,
+            // Create data object that will be encoded in the QR
+            const qrPayload = {
                 name: name,
                 location: location,
-                targetUrl: targetUrl,  // Where visitor ends up (Instagram, etc.)
-                trackingUrl: trackingUrl,  // Your GitHub tracker URL
+                url: targetUrl,
+                created: new Date().toISOString()
+            };
+            
+            // Encode to base64 for URL
+            const encodedData = encodeURIComponent(btoa(JSON.stringify(qrPayload)));
+            
+            // Build the tracking URL that contains all the data
+            const currentPageUrl = window.location.href.split('?')[0];
+            const trackingUrl = `${currentPageUrl}?data=${encodedData}`;
+            
+            // Store in your local database for tracking
+            currentQR = {
+                id: Date.now().toString(),
+                name: name,
+                location: location,
+                targetUrl: targetUrl,
+                trackingUrl: trackingUrl,
+                encodedData: encodedData,
                 notes: notes,
                 createdAt: new Date().toISOString(),
                 scans: 0,
@@ -1112,19 +1120,27 @@
         function updateStats() {
             document.getElementById('totalQrs').textContent = qrDatabase.length;
             
-            const totalScans = qrDatabase.reduce((sum, qr) => sum + qr.scans, 0);
+            // Count scans from the shared storage
+            const allScans = JSON.parse(localStorage.getItem('allQRScans') || '[]');
+            
+            // Count scans for your QR codes
+            let totalScans = 0;
+            qrDatabase.forEach(qr => {
+                const qrScans = allScans.filter(s => s.qrName === qr.name);
+                totalScans += qrScans.length;
+                qr.scans = qrScans.length;
+                qr.scanHistory = qrScans;
+            });
+            
             document.getElementById('totalScans').textContent = totalScans;
             
             const locations = new Set(qrDatabase.map(qr => qr.location)).size;
             document.getElementById('uniqueLocations').textContent = locations;
             
             let lastScan = null;
-            qrDatabase.forEach(qr => {
-                if (qr.scanHistory.length > 0) {
-                    const latest = new Date(qr.scanHistory[0].timestamp);
-                    if (!lastScan || latest > lastScan) lastScan = latest;
-                }
-            });
+            if (allScans.length > 0) {
+                lastScan = new Date(allScans[0].timestamp);
+            }
             
             document.getElementById('lastScan').textContent = lastScan ? timeAgo(lastScan) : 'Never';
         }
@@ -1190,7 +1206,7 @@
                 <div style="text-align: center; margin-bottom: 1.5rem;">
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qr.trackingUrl)}" 
                          style="background: white; padding: 1rem; border-radius: 12px;">
-                    <div style="margin-top: 0.5rem; color: var(--gray); font-size: 0.9rem;">ID: ${qr.id}</div>
+                    <div style="margin-top: 0.5rem; color: var(--gray); font-size: 0.9rem;">Scan this QR to test</div>
                 </div>
                 
                 <div class="detail-grid">
@@ -1221,14 +1237,14 @@
                 
                 <div style="margin-bottom: 1rem;">
                     <div style="font-weight: 600; margin-bottom: 0.75rem;">Recent Scans</div>
-                    ${qr.scanHistory.slice(0, 5).map(scan => `
+                    ${qr.scanHistory && qr.scanHistory.length > 0 ? qr.scanHistory.slice(0, 5).map(scan => `
                         <div style="padding: 0.75rem; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 0.5rem; font-size: 0.9rem;">
-                            <div>${scan.latitude ? `📍 ${scan.latitude.toFixed(4)}, ${scan.longitude.toFixed(4)}` : '📍 Location not available'}</div>
+                            <div>${scan.platform || 'Unknown device'} • ${scan.language || 'Unknown language'}</div>
                             <div style="color: var(--gray); font-size: 0.8rem; margin-top: 0.25rem;">
-                                ${scan.platform || 'Unknown device'} • ${timeAgo(scan.timestamp)}
+                                Screen: ${scan.screenSize} • ${timeAgo(scan.timestamp)}
                             </div>
                         </div>
-                    `).join('') || '<p style="color: var(--gray);">No scans yet</p>'}
+                    `).join('') : '<p style="color: var(--gray);">No scans yet</p>'}
                 </div>
                 
                 <div style="display: flex; gap: 1rem;">
@@ -1282,7 +1298,7 @@
         }
 
         function deleteQR(id) {
-            if (confirm('Delete this QR code? All scan history will be lost.')) {
+            if (confirm('Delete this QR code?')) {
                 qrDatabase = qrDatabase.filter(q => q.id !== id);
                 localStorage.setItem('myQRTracker', JSON.stringify(qrDatabase));
                 updateStats();
@@ -1296,20 +1312,17 @@
             const container = document.getElementById('scanLog');
             const filter = document.getElementById('scanFilter').value;
             
-            let allScans = [];
-            qrDatabase.forEach(qr => {
-                qr.scanHistory.forEach(scan => {
-                    allScans.push({...scan, qrName: qr.name, qrLocation: qr.location, qrId: qr.id});
-                });
-            });
+            const allScans = JSON.parse(localStorage.getItem('allQRScans') || '[]');
             
+            let scans = allScans;
             if (filter !== 'all') {
-                allScans = allScans.filter(s => s.qrId === filter);
+                const qr = qrDatabase.find(q => q.id === filter);
+                if (qr) {
+                    scans = allScans.filter(s => s.qrName === qr.name);
+                }
             }
             
-            allScans.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            
-            if (allScans.length === 0) {
+            if (scans.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">◎</div>
@@ -1320,14 +1333,13 @@
                 return;
             }
             
-            container.innerHTML = allScans.map(scan => `
+            container.innerHTML = scans.map(scan => `
                 <div class="scan-item">
                     <div class="scan-icon">◎</div>
                     <div class="scan-info">
                         <div class="scan-location">${scan.qrName}</div>
                         <div class="scan-meta">
-                            ${scan.latitude ? `📍 ${scan.latitude.toFixed(4)}, ${scan.longitude.toFixed(4)} •` : ''}
-                            ${scan.platform || 'Unknown device'}
+                            ${scan.platform || 'Unknown device'} • ${scan.screenSize}
                         </div>
                     </div>
                     <div class="scan-time">${timeAgo(scan.timestamp)}</div>
