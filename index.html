@@ -684,11 +684,20 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        .url-display {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 12px;
+            margin: 1rem 0;
+            font-family: monospace;
+            word-break: break-all;
+            max-width: 90%;
+        }
     </style>
 </head>
 <body>
-    <div class="bg-animation"></div>
-    
+    <!-- DASHBOARD VIEW -->
     <div id="app-container" style="display: none;">
         <div class="container">
             <header>
@@ -737,7 +746,7 @@
                                 <label class="form-label">Destination URL *</label>
                                 <input type="url" class="form-input" id="qrContent" placeholder="https://instagram.com/yourname" required>
                                 <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--gray);">
-                                    This is where people will go after scanning (Instagram, Website, etc.)
+                                    This is where people will be redirected after scanning (Instagram, Website, etc.)
                                 </div>
                             </div>
                             
@@ -755,7 +764,7 @@
                     <div class="panel">
                         <div class="panel-header">
                             <div class="panel-title">Preview & Print</div>
-                            <div class="panel-subtitle">Scan this to test → redirects to your URL</div>
+                            <div class="panel-subtitle">Test: Scan → Track → Redirect to your URL</div>
                         </div>
                         
                         <div class="qr-preview-container" id="previewContainer">
@@ -775,9 +784,9 @@
                         </div>
                         
                         <div class="print-hint" id="printHint" style="display: none;">
-                            <span>💡</span>
+                            <span>ℹ️</span>
                             <div>
-                                <strong>How it works:</strong> QR contains your GitHub tracker URL. When scanned, it logs the location/device, then instantly redirects to your destination URL above.
+                                <strong>How it works:</strong> QR contains your GitHub tracker URL. When scanned, it logs the visit, then instantly redirects to your Destination URL (Instagram, etc.).
                             </div>
                         </div>
                     </div>
@@ -859,34 +868,36 @@
         </div>
     </div>
 
-    <!-- Redirect Page (shown when scanning) -->
+    <!-- REDIRECT PAGE (shown when someone scans QR) -->
     <div id="redirect-container" style="display: none;" class="redirect-page">
         <div class="redirect-spinner"></div>
         <h2>Scan Logged!</h2>
-        <p style="color: var(--gray); margin-top: 1rem; max-width: 400px;">
-            Tracking scan from <strong id="scan-source">Unknown</strong>. 
-            Redirecting you to the destination...
+        <p style="color: var(--gray); margin-top: 1rem;">
+            Tracking scan from <strong id="scan-source">Unknown</strong>
         </p>
-        <div style="margin-top: 2rem; padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.3);">
-            <small style="color: #818cf8;">Destination: <span id="target-url">...</span></small>
+        <div class="url-display" id="target-url-display">
+            Redirecting to: <span id="target-url">...</span>
         </div>
+        <p style="color: var(--gray); font-size: 0.9rem; margin-top: 1rem;">
+            You should be redirected automatically in 2 seconds...
+        </p>
+        <button class="btn btn-primary" id="manual-redirect-btn" style="margin-top: 2rem; width: auto; display: none;">
+            Click to Redirect
+        </button>
     </div>
 
     <script>
         // Data Management
         let qrDatabase = JSON.parse(localStorage.getItem('myQRTracker')) || [];
         let currentQR = null;
-        let isRedirecting = false;
 
-        // Initialize
+        // Initialize - Check if this is a scan or dashboard
         document.addEventListener('DOMContentLoaded', () => {
-            // Check if this is a scan (has ?scan= in URL)
             const urlParams = new URLSearchParams(window.location.search);
             const scanId = urlParams.get('scan');
             
             if (scanId) {
-                // This is someone scanning a QR code - handle redirect flow
-                isRedirecting = true;
+                // Someone scanned a QR code - handle redirect
                 handleScanRedirect(scanId);
             } else {
                 // This is the admin/dashboard view
@@ -898,67 +909,79 @@
             }
         });
 
-        // Handle Scan & Redirect
+        // HANDLE SCAN & REDIRECT TO DESTINATION URL
         function handleScanRedirect(qrId) {
+            const container = document.getElementById('redirect-container');
+            container.style.display = 'flex';
+            
+            // Find the QR code in database
             const qr = qrDatabase.find(q => q.id === qrId);
             
-            document.getElementById('redirect-container').style.display = 'flex';
+            if (!qr) {
+                // QR not found - show error
+                document.getElementById('scan-source').textContent = 'Unknown QR Code';
+                document.getElementById('target-url').textContent = 'Not found in database';
+                document.querySelector('.redirect-spinner').style.display = 'none';
+                return;
+            }
             
-            if (qr) {
-                document.getElementById('scan-source').textContent = qr.name;
-                document.getElementById('target-url').textContent = qr.targetUrl;
-                
-                // Log the scan
-                const scanData = {
-                    timestamp: new Date().toISOString(),
-                    device: navigator.userAgent,
-                    language: navigator.language,
-                    platform: navigator.platform,
-                    screenSize: `${screen.width}x${screen.height}`,
-                    referrer: document.referrer || 'Direct'
-                };
-                
-                // Try to get geolocation
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            scanData.latitude = position.coords.latitude;
-                            scanData.longitude = position.coords.longitude;
-                            scanData.accuracy = position.coords.accuracy;
-                            saveScanAndRedirect(qr, scanData);
-                        },
-                        (error) => {
-                            scanData.locationError = error.message;
-                            saveScanAndRedirect(qr, scanData);
-                        },
-                        { timeout: 5000 }
-                    );
-                } else {
-                    scanData.locationError = 'Geolocation not supported';
-                    saveScanAndRedirect(qr, scanData);
-                }
+            // Show what we're doing
+            document.getElementById('scan-source').textContent = qr.name;
+            document.getElementById('target-url').textContent = qr.targetUrl;
+            
+            // Log the scan data
+            const scanData = {
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                platform: navigator.platform,
+                screenSize: `${screen.width}x${screen.height}`,
+                referrer: document.referrer || 'Direct'
+            };
+            
+            // Try to get geolocation
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        scanData.latitude = position.coords.latitude;
+                        scanData.longitude = position.coords.longitude;
+                        scanData.accuracy = position.coords.accuracy;
+                        saveScanAndRedirect(qr, scanData);
+                    },
+                    (error) => {
+                        // Location denied or error - still redirect
+                        scanData.locationError = error.message;
+                        saveScanAndRedirect(qr, scanData);
+                    },
+                    { timeout: 5000, enableHighAccuracy: true }
+                );
             } else {
-                // QR not found - redirect to home after showing error
-                document.getElementById('scan-source').textContent = 'Unknown QR';
-                document.getElementById('target-url').textContent = 'Not found';
-                setTimeout(() => {
-                    window.location.href = window.location.pathname;
-                }, 3000);
+                // Geolocation not supported
+                scanData.locationError = 'Not supported';
+                saveScanAndRedirect(qr, scanData);
             }
         }
 
         function saveScanAndRedirect(qr, scanData) {
+            // Save scan to database
             qr.scans++;
             qr.scanHistory.unshift(scanData);
             localStorage.setItem('myQRTracker', JSON.stringify(qrDatabase));
             
-            // Redirect after short delay (to show the tracking message)
+            // Show manual redirect button as backup
+            const manualBtn = document.getElementById('manual-redirect-btn');
+            manualBtn.style.display = 'inline-flex';
+            manualBtn.onclick = () => {
+                window.location.href = qr.targetUrl;
+            };
+            
+            // Auto-redirect after 2 seconds
             setTimeout(() => {
                 window.location.href = qr.targetUrl;
             }, 2000);
         }
 
-        // Tab Switching
+        // DASHBOARD FUNCTIONS
         function switchTab(tab) {
             document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -974,7 +997,6 @@
             }
         }
 
-        // Generate QR Code
         function generateQR(e) {
             e.preventDefault();
             
@@ -986,10 +1008,10 @@
             // Create unique ID
             const qrId = 'QR' + Date.now().toString(36).toUpperCase();
             
-            // IMPORTANT: The QR code points to YOUR GitHub Pages URL with tracking params
-            // When scanned, it visits your GitHub page, logs the scan, then redirects to targetUrl
-            const baseUrl = window.location.origin + window.location.pathname;
-            const trackingUrl = `${baseUrl}?scan=${qrId}`;
+            // Build tracking URL - this is what the QR code contains
+            // When scanned, it comes to this page with ?scan=ID
+            const currentPageUrl = window.location.href.split('?')[0]; // Remove any existing params
+            const trackingUrl = `${currentPageUrl}?scan=${qrId}`;
             
             // Store QR data
             currentQR = {
@@ -1032,10 +1054,9 @@
             document.getElementById('qrActions').style.display = 'flex';
             document.getElementById('printHint').style.display = 'flex';
             
-            showToast('QR Code ready! It will track scans then redirect to: ' + targetUrl, 'success');
+            showToast(`QR created! Will redirect to: ${targetUrl}`, 'success');
         }
 
-        // Print QR
         function printQR() {
             if (!currentQR) return;
             
@@ -1046,25 +1067,19 @@
             window.print();
         }
 
-        // Download QR
         function downloadQR() {
             const qrCanvas = document.querySelector('#qrcode canvas');
             if (!qrCanvas) return;
             
-            // Create canvas with label
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             canvas.width = 300;
             canvas.height = 340;
             
-            // White background
             ctx.fillStyle = 'white';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw QR
             ctx.drawImage(qrCanvas, 25, 25);
             
-            // Draw label
             ctx.fillStyle = 'black';
             ctx.font = 'bold 16px Arial';
             ctx.textAlign = 'center';
@@ -1086,7 +1101,6 @@
             showToast('Downloaded with label', 'success');
         }
 
-        // Save QR
         function saveQR() {
             if (!currentQR) return;
             qrDatabase.push(currentQR);
@@ -1095,7 +1109,6 @@
             updateScanFilter();
         }
 
-        // Update Stats
         function updateStats() {
             document.getElementById('totalQrs').textContent = qrDatabase.length;
             
@@ -1116,7 +1129,6 @@
             document.getElementById('lastScan').textContent = lastScan ? timeAgo(lastScan) : 'Never';
         }
 
-        // Render QR List
         function renderQRList() {
             const container = document.getElementById('qrList');
             const filter = document.getElementById('searchFilter').value.toLowerCase();
@@ -1134,7 +1146,6 @@
                     <div class="empty-state">
                         <div class="empty-state-icon">◈</div>
                         <h3>No QR codes yet</h3>
-                        <p>Create your first trackable QR code</p>
                         <button class="btn btn-primary" onclick="switchTab('creator')" style="margin-top: 1rem; width: auto;">Create QR Code</button>
                     </div>
                 `;
@@ -1170,7 +1181,6 @@
             renderQRList();
         }
 
-        // Show QR Details
         function showQRDetails(id) {
             const qr = qrDatabase.find(q => q.id === id);
             if (!qr) return;
@@ -1185,11 +1195,11 @@
                 
                 <div class="detail-grid">
                     <div class="detail-item">
-                        <div class="detail-label">Scans</div>
+                        <div class="detail-label">Total Scans</div>
                         <div class="detail-value">${qr.scans}</div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">Location</div>
+                        <div class="detail-label">Location Type</div>
                         <div class="detail-value">${qr.location}</div>
                     </div>
                     <div class="detail-item">
@@ -1197,8 +1207,8 @@
                         <div class="detail-value">${new Date(qr.createdAt).toLocaleDateString()}</div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">Destination</div>
-                        <div class="detail-value" style="font-size: 0.9rem; word-break: break-all;">${qr.targetUrl}</div>
+                        <div class="detail-label">Redirects To</div>
+                        <div class="detail-value" style="font-size: 0.85rem; word-break: break-all;">${qr.targetUrl}</div>
                     </div>
                 </div>
                 
@@ -1213,9 +1223,9 @@
                     <div style="font-weight: 600; margin-bottom: 0.75rem;">Recent Scans</div>
                     ${qr.scanHistory.slice(0, 5).map(scan => `
                         <div style="padding: 0.75rem; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 0.5rem; font-size: 0.9rem;">
-                            <div>${scan.latitude ? `📍 ${scan.latitude.toFixed(4)}, ${scan.longitude.toFixed(4)}` : '📍 Location unknown'}</div>
+                            <div>${scan.latitude ? `📍 ${scan.latitude.toFixed(4)}, ${scan.longitude.toFixed(4)}` : '📍 Location not available'}</div>
                             <div style="color: var(--gray); font-size: 0.8rem; margin-top: 0.25rem;">
-                                ${scan.platform} • ${timeAgo(scan.timestamp)}
+                                ${scan.platform || 'Unknown device'} • ${timeAgo(scan.timestamp)}
                             </div>
                         </div>
                     `).join('') || '<p style="color: var(--gray);">No scans yet</p>'}
@@ -1272,7 +1282,7 @@
         }
 
         function deleteQR(id) {
-            if (confirm('Delete this QR code?')) {
+            if (confirm('Delete this QR code? All scan history will be lost.')) {
                 qrDatabase = qrDatabase.filter(q => q.id !== id);
                 localStorage.setItem('myQRTracker', JSON.stringify(qrDatabase));
                 updateStats();
@@ -1282,7 +1292,6 @@
             }
         }
 
-        // Render Scan Log
         function renderScanLog() {
             const container = document.getElementById('scanLog');
             const filter = document.getElementById('scanFilter').value;
