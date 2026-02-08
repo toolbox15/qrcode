@@ -42,6 +42,25 @@
             -webkit-text-fill-color: transparent;
         }
         
+        .cloud-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #34d399;
+            margin-top: 1rem;
+        }
+        
+        .cloud-status.offline {
+            background: rgba(245, 158, 11, 0.2);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: #fbbf24;
+        }
+        
         .nav-tabs {
             display: flex;
             justify-content: center;
@@ -128,6 +147,7 @@
         }
         
         .btn-success { background: #10b981; }
+        .btn-secondary { background: rgba(255,255,255,0.1); }
         
         .qr-preview-container {
             display: flex;
@@ -254,6 +274,34 @@
         }
         
         .toast.show { display: block; }
+        
+        /* Sync Button */
+        .sync-btn {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            z-index: 100;
+        }
+        
+        .sync-btn:hover { background: rgba(99, 102, 241, 0.2); }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .sync-btn.spinning span:first-child {
+            animation: spin 1s linear infinite;
+        }
     </style>
 </head>
 <body>
@@ -261,6 +309,9 @@
         <div class="container">
             <header>
                 <div class="logo">◈ My QR Tracker</div>
+                <div class="cloud-status" id="cloudStatus">
+                    <span>☁️</span> Cloud Sync: <span id="syncStatus">Local Mode</span>
+                </div>
             </header>
 
             <nav class="nav-tabs">
@@ -337,6 +388,11 @@
             </section>
         </div>
         
+        <!-- Sync Button -->
+        <button class="sync-btn" id="syncBtn" onclick="syncNow()">
+            <span>🔄</span> Sync Now
+        </button>
+        
         <div class="toast" id="toast">Success!</div>
     </div>
 
@@ -366,11 +422,77 @@
             } else {
                 // Show dashboard
                 document.getElementById('app-container').style.display = 'block';
+                updateCloudStatus();
                 updateStats();
                 renderQRList();
                 renderScanLog();
             }
         });
+
+        // Update cloud status display
+        function updateCloudStatus() {
+            const statusEl = document.getElementById('cloudStatus');
+            const syncStatus = document.getElementById('syncStatus');
+            
+            if (CONFIG.USE_CLOUD && CONFIG.BIN_ID !== 'your-bin-id-here') {
+                syncStatus.textContent = 'Active';
+                statusEl.classList.remove('offline');
+            } else {
+                syncStatus.textContent = 'Local Mode';
+                statusEl.classList.add('offline');
+            }
+        }
+
+        // Sync with cloud
+        async function syncNow() {
+            if (!CONFIG.USE_CLOUD || CONFIG.BIN_ID === 'your-bin-id-here') {
+                showToast('Cloud not configured. Add your Bin ID and API Key first.');
+                return;
+            }
+            
+            const btn = document.getElementById('syncBtn');
+            btn.classList.add('spinning');
+            
+            try {
+                // Fetch from cloud
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, {
+                    headers: { 'X-Master-Key': CONFIG.API_KEY }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.record && data.record.scans) {
+                        // Merge cloud scans with local
+                        const cloudScans = data.record.scans;
+                        const localScans = scanDatabase;
+                        
+                        // Combine and remove duplicates
+                        const allScans = [...localScans, ...cloudScans];
+                        const uniqueScans = allScans.filter((scan, index, self) => 
+                            index === self.findIndex(s => 
+                                s.timestamp === scan.timestamp && s.qrName === scan.qrName
+                            )
+                        );
+                        
+                        scanDatabase = uniqueScans.sort((a, b) => 
+                            new Date(b.timestamp) - new Date(a.timestamp)
+                        );
+                        
+                        localStorage.setItem('myQRScans', JSON.stringify(scanDatabase));
+                        renderScanLog();
+                        updateStats();
+                        showToast('Synced with cloud!');
+                    }
+                } else {
+                    showToast('Sync failed - check your API key');
+                }
+            } catch (error) {
+                console.error('Sync error:', error);
+                showToast('Sync failed - using local data');
+            } finally {
+                btn.classList.remove('spinning');
+            }
+        }
 
         // Handle scan - instant redirect with background tracking
         function handleScan(encodedData) {
@@ -384,18 +506,56 @@
                     targetUrl: qrData.url,
                     timestamp: new Date().toISOString(),
                     userAgent: navigator.userAgent,
-                    platform: navigator.platform
+                    platform: navigator.platform,
+                    screenSize: `${screen.width}x${screen.height}`
                 };
                 
-                // Save scan
+                // Save scan locally
                 scanDatabase.unshift(scan);
                 localStorage.setItem('myQRScans', JSON.stringify(scanDatabase));
+                
+                // Try to sync to cloud (fire and forget)
+                if (CONFIG.USE_CLOUD && CONFIG.BIN_ID !== 'your-bin-id-here') {
+                    syncScanToCloud(scan);
+                }
                 
                 // INSTANT REDIRECT
                 window.location.replace(qrData.url);
                 
             } catch (e) {
                 window.location.href = window.location.origin;
+            }
+        }
+
+        // Sync single scan to cloud
+        async function syncScanToCloud(scan) {
+            try {
+                // Get current cloud data
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, {
+                    headers: { 'X-Master-Key': CONFIG.API_KEY }
+                });
+                
+                let cloudData = { scans: [] };
+                if (response.ok) {
+                    const data = await response.json();
+                    cloudData = data.record || { scans: [] };
+                }
+                
+                // Add new scan
+                cloudData.scans.unshift(scan);
+                cloudData.lastUpdated = new Date().toISOString();
+                
+                // Save back to cloud
+                await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': CONFIG.API_KEY
+                    },
+                    body: JSON.stringify(cloudData)
+                });
+            } catch (e) {
+                console.log('Cloud sync failed, scan saved locally');
             }
         }
 
@@ -537,7 +697,7 @@
             const container = document.getElementById('scanLog');
             
             if (scanDatabase.length === 0) {
-                container.innerHTML = '<div class="empty-state">No scans yet</div>';
+                container.innerHTML = '<div class="empty-state">No scans yet. Scan a QR code to see it here!</div>';
                 return;
             }
             
@@ -546,7 +706,7 @@
                     <div>
                         <strong>${scan.qrName}</strong>
                         <div style="color: var(--gray); font-size: 0.85rem;">
-                            ${scan.platform} • ${new Date(scan.timestamp).toLocaleString()}
+                            ${scan.platform || 'Unknown'} • ${new Date(scan.timestamp).toLocaleString()}
                         </div>
                     </div>
                 </div>
