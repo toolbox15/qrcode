@@ -515,7 +515,7 @@
                 localStorage.setItem('myQRScans', JSON.stringify(scanDatabase));
                 
                 // Try to sync to cloud (fire and forget)
-                if (CONFIG.USE_CLOUD && CONFIG.BIN_ID !== 'your-bin-id-here') {
+                if (CONFIG.USE_CLOUD && CONFIG.BIN_ID !== '6988ac72ae596e708f1ab357') {
                     syncScanToCloud(scan);
                 }
                 
