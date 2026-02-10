@@ -3,297 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIBizService | Reputation Shield</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <title>AIBizService | AI-Powered Business Growth</title>
     <style>
         :root {
             --primary: #6366f1;
-            --success: #10b981;
-            --danger: #ef4444;
-            --dark: #0f172a;
-            --light: #f8fafc;
-            --gray: #64748b;
-            --glass: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --dark: #020617;
+            --card: #0f172a;
+            --text: #f8fafc;
+            --gray: #94a3b8;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--dark); color: var(--light); line-height: 1.6; }
-        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--text); line-height: 1.6; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
         
-        /* Typography */
-        h1, h2, h3 { font-weight: 800; letter-spacing: -0.025em; margin-bottom: 1rem; }
-        .logo { font-size: 1.5rem; font-weight: 900; background: linear-gradient(to right, #818cf8, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        /* Hero Section */
+        header { padding: 6rem 0 4rem; text-align: center; }
+        .logo { font-size: 2.5rem; font-weight: 900; background: linear-gradient(to right, #818cf8, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; }
+        h1 { font-size: 3.5rem; margin-bottom: 1.5rem; letter-spacing: -0.05em; }
+        .hero-sub { color: var(--gray); font-size: 1.25rem; max-width: 600px; margin: 0 auto 2rem; }
 
-        /* UI Elements */
-        .panel { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 24px; padding: 2rem; margin-bottom: 2rem; backdrop-filter: blur(10px); }
-        .form-input { width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 12px; color: white; margin-bottom: 1rem; font-size: 1rem; }
-        .btn { padding: 12px 24px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        /* Service Grid */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; margin-top: 4rem; }
+        .card { background: var(--card); border: 1px solid rgba(255,255,255,0.1); padding: 3rem 2rem; border-radius: 24px; transition: 0.3s; text-align: left; }
+        .card:hover { border-color: var(--primary); transform: translateY(-5px); }
+        .card h3 { font-size: 1.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; }
+        .card p { color: var(--gray); margin-bottom: 2rem; }
+        
+        .btn { padding: 12px 24px; border-radius: 12px; font-weight: 700; text-decoration: none; display: inline-block; transition: 0.2s; }
         .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-        .btn-outline { background: transparent; border: 1px solid var(--glass-border); color: white; }
+        .btn-disabled { background: #1e293b; color: #475569; cursor: not-allowed; }
 
-        /* Tabs */
-        .nav-tabs { display: flex; gap: 8px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 16px; margin-bottom: 2rem; }
-        .nav-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--gray); border-radius: 10px; cursor: pointer; font-weight: 600; }
-        .nav-tab.active { background: var(--primary); color: white; }
-
-        /* Tech Badge Preview */
-        .tech-badge { background: white; color: var(--dark); width: 280px; padding: 30px 20px; border-radius: 24px; margin: 2rem auto; border: 4px solid var(--primary); text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
-        .tech-circle { width: 70px; height: 70px; background: var(--primary); border-radius: 50%; margin: 0 auto 15px; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 900; }
-        .badge-title { font-size: 0.7rem; font-weight: 800; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
-
-        /* Reputation Filter UI */
-        .star-rating { font-size: 3rem; margin: 1.5rem 0; display: flex; justify-content: center; gap: 15px; }
-        .star-btn { cursor: pointer; transition: transform 0.2s; }
-        .star-btn:hover { transform: scale(1.2); }
-
-        .hidden { display: none; }
-        #toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 12px 24px; border-radius: 12px; z-index: 1000; display: none; }
+        footer { text-align: center; padding: 4rem 0; color: var(--gray); font-size: 0.9rem; border-top: 1px solid rgba(255,255,255,0.05); }
     </style>
 </head>
 <body>
 
-    <div id="toast">Saved Successfully</div>
+    <header class="container">
+        <div class="logo">AIBizService</div>
+        <h1>Next-Gen Business Automation</h1>
+        <p class="hero-sub">We deploy AI-driven tools that protect your reputation, automate your sales, and grow your local business while you sleep.</p>
+    </header>
 
-    <div id="view-landing" class="container hidden" style="text-align: center; padding-top: 10vh;">
-        <div class="logo" style="font-size: 3rem; margin-bottom: 0.5rem;">AIBizService</div>
-        <h1>Reputation Shield</h1>
-        <p style="color: var(--gray); max-width: 500px; margin: 0 auto 2rem;">Get 5-star Google reviews on the job. Shield your business from negative feedback automatically.</p>
-        
-        <div class="panel" style="max-width: 450px; margin: 0 auto;">
-            <h3>Request 3-Month Demo</h3>
-            <form onsubmit="handleLead(event)">
-                <input type="text" id="leadCompany" class="form-input" placeholder="Business Name" required>
-                <input type="email" id="leadEmail" class="form-input" placeholder="Work Email" required>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Get My Tech Badges</button>
-            </form>
-            <p style="margin-top: 1.5rem; font-size: 0.8rem; color: var(--gray);">Client Login: <a href="?admin=1" style="color: var(--primary)">Dashboard Access</a></p>
+    <main class="container">
+        <div class="grid">
+            
+            <div class="card">
+                <h3>🛡️ Reputation Shield</h3>
+                <p>The ultimate tool for field technicians. Capture 5-star Google reviews instantly and block negative feedback before it goes public.</p>
+                <a href="reviews/" class="btn btn-primary">Launch Shield</a>
+            </div>
+
+            <div class="card">
+                <h3>🤖 AI Appointment Setter</h3>
+                <p>Coming Soon: Our AI voice and chat agents handle your incoming leads 24/7, booking jobs directly into your calendar.</p>
+                <span class="btn btn-disabled">Join Waitlist</span>
+            </div>
+
+            <div class="card">
+                <h3>📊 AI Lead Magnet</h3>
+                <p>Coming Soon: Automated local lead generation that finds high-intent customers in your specific Chicago zip codes.</p>
+                <span class="btn btn-disabled">Developing...</span>
+            </div>
+
         </div>
-    </div>
+    </main>
 
-    <div id="view-gatekeeper" class="container hidden" style="text-align: center; padding-top: 5vh;">
-        <div class="panel" style="max-width: 500px; margin: 0 auto;">
-            <div class="tech-circle" id="gateInitials">??</div>
-            <h2 id="gateMessage">How was your service today?</h2>
-            <p id="gateSub">Your feedback helps us improve.</p>
-            
-            <div class="star-rating" id="starContainer">
-                <span class="star-btn" onclick="submitSentiment(1)">😠</span>
-                <span class="star-btn" onclick="submitSentiment(3)">😐</span>
-                <span class="star-btn" onclick="submitSentiment(5)">⭐</span>
-            </div>
+    <footer class="container">
+        <p>&copy; 2026 AIBizService. All Rights Reserved. Built for the modern service pro.</p>
+    </footer>
 
-            <div id="feedback-form" class="hidden">
-                <textarea id="privateComment" class="form-input" placeholder="Please tell us how we can make it right..." rows="4"></textarea>
-                <button onclick="savePrivateFeedback()" class="btn btn-primary" style="width: 100%;">Submit Private Feedback</button>
-            </div>
-            
-            <div id="success-msg" class="hidden">
-                <h3 style="color: var(--success)">Thank You!</h3>
-                <p>Your feedback has been sent directly to management.</p>
-            </div>
-        </div>
-    </div>
-
-    <div id="view-admin" class="container hidden">
-        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-            <div class="logo">AIBizService Admin</div>
-            <div style="color: var(--success); font-size: 0.8rem; font-weight: 700;">● SYSTEM ACTIVE</div>
-        </header>
-
-        <nav class="nav-tabs">
-            <button class="nav-tab active" onclick="switchTab('create')">Create Badge</button>
-            <button class="nav-tab" onclick="switchTab('analytics')">Sentiment Log</button>
-            <button class="nav-tab" onclick="switchTab('leads')">Prospects</button>
-        </nav>
-
-        <div id="tab-create" class="tab-content">
-            <div class="panel">
-                <h3>Setup Technician Badge</h3>
-                <form onsubmit="generateBadge(event)">
-                    <input type="text" id="techName" class="form-input" placeholder="Technician Name" required>
-                    <input type="url" id="googleUrl" class="form-input" placeholder="Google Review Direct Link" required>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">Generate Digital Badge</button>
-                </form>
-            </div>
-
-            <div id="badge-preview-area" class="hidden" style="text-align: center;">
-                <div class="tech-badge" id="badgeExport">
-                    <div class="tech-circle" id="prevInitials">??</div>
-                    <h3 id="prevName" style="margin-bottom: 2px;">Name</h3>
-                    <div class="badge-title">Verified Service Pro</div>
-                    <div id="qrcode" style="display: inline-block; background: white; padding: 10px; border-radius: 12px;"></div>
-                    <p style="font-size: 0.6rem; color: #64748b; margin-top: 10px;">AIBizService Protected Scan</p>
-                </div>
-                <button class="btn btn-outline" onclick="window.print()">Download/Print Badge</button>
-            </div>
-        </div>
-
-        <div id="tab-analytics" class="tab-content hidden">
-            <div class="panel">
-                <h3>Recent Activity</h3>
-                <div id="scanLog" style="margin-top: 1rem;"></div>
-            </div>
-        </div>
-
-        <div id="tab-leads" class="tab-content hidden">
-            <div class="panel">
-                <h3>Demo Requests</h3>
-                <div id="leadLog" style="margin-top: 1rem;"></div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const CONFIG = {
-            BIN_ID: '67a7da09ad194d401c5ad831', // Your Bin ID
-            API_KEY: '$2a$10$Rs0hwy8AsGdOhHr2VjH3j.voZoeOgcZ1ddCdfzn.63bqiKTGSW1gW' // Your Key
-        };
-
-        let db = { qrs: [], scans: [], leads: [] };
-        let currentQR = null;
-
-        // --- CORE LOGIC ---
-        document.addEventListener('DOMContentLoaded', async () => {
-            const params = new URLSearchParams(window.location.search);
-            
-            if (params.has('id')) {
-                loadGatekeeper(params.get('id'));
-            } else if (params.has('admin')) {
-                await loadData();
-                showView('view-admin');
-                renderAdmin();
-            } else {
-                showView('view-landing');
-            }
-        });
-
-        async function loadData() {
-            const r = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, {
-                headers: { 'X-Master-Key': CONFIG.API_KEY }
-            });
-            const d = await r.json();
-            db = d.record;
-        }
-
-        async function saveData() {
-            await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-Master-Key': CONFIG.API_KEY },
-                body: JSON.stringify(db)
-            });
-        }
-
-        // --- GATEKEEPER LOGIC (Customer View) ---
-        async function loadGatekeeper(id) {
-            await loadData();
-            currentQR = db.qrs.find(q => q.id === id);
-            if (!currentQR) return alert("Badge Not Found");
-            
-            document.getElementById('gateInitials').textContent = currentQR.name[0];
-            document.getElementById('gateMessage').textContent = `Rate your service with ${currentQR.name}`;
-            showView('view-gatekeeper');
-        }
-
-        async function submitSentiment(stars) {
-            if (stars >= 4) {
-                db.scans.unshift({ qrName: currentQR.name, type: "5-Star (Sent to Google)", time: new Date().toISOString() });
-                await saveData();
-                document.getElementById('gateMessage').textContent = "Excellent! Sending you to Google...";
-                document.getElementById('starContainer').classList.add('hidden');
-                setTimeout(() => window.location.href = currentQR.url, 1500);
-            } else {
-                db.scans.unshift({ qrName: currentQR.name, type: "Negative (Blocked)", time: new Date().toISOString() });
-                await saveData();
-                document.getElementById('gateMessage').textContent = "We're sorry to hear that.";
-                document.getElementById('gateSub').textContent = "Please help us improve by leaving a private note for management.";
-                document.getElementById('starContainer').classList.add('hidden');
-                document.getElementById('feedback-form').classList.remove('hidden');
-            }
-        }
-
-        async function savePrivateFeedback() {
-            const msg = document.getElementById('privateComment').value;
-            db.scans[0].comment = msg;
-            await saveData();
-            document.getElementById('feedback-form').classList.add('hidden');
-            document.getElementById('success-msg').classList.remove('hidden');
-        }
-
-        // --- ADMIN LOGIC ---
-        async function generateBadge(e) {
-            e.preventDefault();
-            const name = document.getElementById('techName').value;
-            const url = document.getElementById('googleUrl').value;
-            const id = Math.random().toString(36).substr(2, 9);
-            
-            db.qrs.push({ id, name, url, isReview: true });
-            await saveData();
-            
-            // Render Preview
-            document.getElementById('prevName').textContent = name;
-            document.getElementById('prevInitials').textContent = name[0].toUpperCase();
-            document.getElementById('qrcode').innerHTML = "";
-            new QRCode(document.getElementById('qrcode'), {
-                text: window.location.origin + window.location.pathname + "?id=" + id,
-                width: 140, height: 140
-            });
-            
-            document.getElementById('badge-preview-area').classList.remove('hidden');
-            showToast("Tech Badge Created");
-            renderAdmin();
-        }
-
-        async function handleLead(e) {
-            e.preventDefault();
-            await loadData();
-            db.leads.unshift({ 
-                company: document.getElementById('leadCompany').value, 
-                email: document.getElementById('leadEmail').value,
-                time: new Date().toISOString()
-            });
-            await saveData();
-            e.target.innerHTML = "<h3>Request Sent!</h3><p>We will contact you shortly.</p>";
-        }
-
-        // --- HELPERS ---
-        function showView(id) {
-            document.querySelectorAll('.container').forEach(v => v.classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
-        }
-
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('tab-' + tab).classList.remove('hidden');
-            event.target.classList.add('active');
-        }
-
-        function renderAdmin() {
-            const scanDiv = document.getElementById('scanLog');
-            scanDiv.innerHTML = db.scans.slice(0, 10).map(s => `
-                <div style="padding:10px; border-bottom:1px solid #333; font-size:0.9rem;">
-                    <strong>${s.qrName}</strong>: ${s.type} <br>
-                    <span style="color:var(--gray)">${new Date(s.time).toLocaleString()}</span>
-                    ${s.comment ? `<div style="color:var(--danger); margin-top:5px;">" ${s.comment} "</div>` : ''}
-                </div>
-            `).join('') || "No scans yet.";
-
-            const leadDiv = document.getElementById('leadLog');
-            leadDiv.innerHTML = db.leads.map(l => `
-                <div style="padding:10px; border-bottom:1px solid #333;">
-                    <strong>${l.company}</strong> (${l.email})<br>
-                    <span style="color:var(--gray)">${new Date(l.time).toLocaleDateString()}</span>
-                </div>
-            `).join('') || "No leads yet.";
-        }
-
-        function showToast(m) {
-            const t = document.getElementById('toast');
-            t.textContent = m; t.style.display = 'block';
-            setTimeout(() => t.style.display = 'none', 3000);
-        }
-    </script>
 </body>
 </html>
