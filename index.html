@@ -16,9 +16,12 @@
         body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--text); line-height: 1.6; }
         .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
         
-        /* Hero Section */
-        header { padding: 6rem 0 4rem; text-align: center; }
-        .logo { font-size: 2.5rem; font-weight: 900; background: linear-gradient(to right, #818cf8, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem; }
+        /* Updated Hero Header with Logo */
+        header { padding: 5rem 0 3rem; text-align: center; }
+        .header-main { display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+        .main-logo-img { width: 80px; height: 80px; object-fit: contain; }
+        .logo-text { font-size: 2.8rem; font-weight: 900; background: linear-gradient(to right, #818cf8, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
         h1 { font-size: 3.5rem; margin-bottom: 1.5rem; letter-spacing: -0.05em; }
         .hero-sub { color: var(--gray); font-size: 1.25rem; max-width: 600px; margin: 0 auto 2rem; }
 
@@ -39,7 +42,10 @@
 <body>
 
     <header class="container">
-        <div class="logo">AIBizService</div>
+        <div class="header-main">
+            <img src="logo_shield.png" alt="AIBizService Logo" class="main-logo-img">
+            <div class="logo-text">AIBizService</div>
+        </div>
         <h1>Next-Gen Business Automation</h1>
         <p class="hero-sub">We deploy AI-driven tools that protect your reputation, automate your sales, and grow your local business while you sleep.</p>
     </header>
@@ -50,7 +56,7 @@
             <div class="card">
                 <h3>🛡️ Reputation Shield</h3>
                 <p>The ultimate tool for field technicians. Capture 5-star Google reviews instantly and block negative feedback before it goes public.</p>
-                <a href="reviews/" class="btn btn-primary">Launch Shield</a>
+                <a href="reviews/?admin=1" class="btn btn-primary">Launch Admin</a>
             </div>
 
             <div class="card">
@@ -60,9 +66,9 @@
             </div>
 
             <div class="card">
-                <h3>📊 AI Lead Magnet</h3>
-                <p>Coming Soon: Automated local lead generation that finds high-intent customers in your specific Chicago zip codes.</p>
-                <span class="btn btn-disabled">Developing...</span>
+                <h3>📊 Rehab Cost Estimator</h3>
+                <p>Free tool for Chicago investors. Get instant labor and material estimates for properties in 60644 and 60651.</p>
+                <a href="calculator/" class="btn btn-primary">Try Calculator</a>
             </div>
 
         </div>
