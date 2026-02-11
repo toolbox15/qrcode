@@ -26,11 +26,13 @@
         .nav-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--gray); border-radius: 10px; cursor: pointer; font-weight: 600; }
         .nav-tab.active { background: var(--primary); color: white; }
         
-        .roster-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--glass-border); gap: 10px; }
-        .tech-badge { background: white; color: var(--dark); width: 280px; padding: 30px 20px; border-radius: 24px; margin: 2rem auto; border: 4px solid var(--primary); text-align: center; }
-        .tech-circle { width: 70px; height: 70px; background: var(--primary); border-radius: 50%; margin: 0 auto 15px; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 900; }
+        /* THE BADGE STYLING */
+        .tech-badge { background: white; color: var(--dark); width: 320px; padding: 30px 20px; border-radius: 24px; margin: 2rem auto; border: 4px solid var(--primary); text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .client-logo-preview { height: 50px; object-fit: contain; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto; }
+        .tech-circle { width: 70px; height: 70px; background: var(--primary); border-radius: 50%; margin: 0 auto 10px; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 900; }
         .hidden { display: none; }
         #toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 12px 24px; border-radius: 12px; display: none; z-index: 1000; }
+        @media print { body * { visibility: hidden; } #badgeExport, #badgeExport * { visibility: visible; } #badgeExport { position: absolute; left: 0; top: 0; width: 100%; border: none; } }
     </style>
 </head>
 <body>
@@ -43,7 +45,7 @@
                 <img src="logo_shield.png" alt="AIBizService" class="agency-logo">
                 <div class="logo-text">AIBizService Admin</div>
             </div>
-            <a href="../index.html" class="btn btn-outline">Exit Admin</a>
+            <a href="../index.html" class="btn btn-outline">Exit</a>
         </header>
 
         <nav class="nav-tabs">
@@ -53,33 +55,35 @@
 
         <div id="tab-create" class="tab-content">
             <div class="panel">
-                <h3 id="form-title" style="margin-bottom:15px;">Add New Client/Tech</h3>
+                <h3 id="form-title" style="margin-bottom:15px;">Live Demo Setup</h3>
                 <form onsubmit="handleBadgeSubmit(event)">
                     <input type="hidden" id="edit-id">
-                    <input type="text" id="companyName" class="form-input" placeholder="Company (e.g. Mac Arthurs Restaurant)" required>
-                    <input type="text" id="techName" class="form-input" placeholder="Staff Name (e.g. Table 5 / Server Name)" required>
-                    <input type="text" id="destUrl" class="form-input" placeholder="Paste Place ID or Full URL" required>
+                    <input type="text" id="companyName" class="form-input" placeholder="Company Name" required>
+                    <input type="text" id="techName" class="form-input" placeholder="Tech/Staff Name" required>
+                    <input type="text" id="destUrl" class="form-input" placeholder="Paste Place ID here..." required>
+                    <input type="text" id="logoUrl" class="form-input" placeholder="Client Logo URL (Optional)">
                     
                     <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px;">
                         <input type="checkbox" id="isStandard" style="width: 20px; height: 20px;">
-                        <label for="isStandard">Standard QR (Bypass Review Gate - Good for Menus)</label>
+                        <label for="isStandard">Standard Link (Bypass Review Gate)</label>
                     </div>
-                    <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%;">Save to Cloud</button>
+                    <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%;">Generate Badge</button>
                 </form>
             </div>
 
             <div id="badge-preview-area" class="hidden" style="text-align: center;">
                 <div id="badgeExport" class="tech-badge">
+                    <img id="prevLogo" src="" class="client-logo-preview hidden">
                     <div class="tech-circle" id="prevInitials">??</div>
                     <h3 id="prevName">Name</h3>
                     <div id="qrcode" style="display: inline-block; background: white; padding: 10px; margin-top: 15px;"></div>
                 </div>
-                <button class="btn btn-outline" onclick="window.print()">Print Badge</button>
+                <button class="btn btn-outline" onclick="window.print()">Print Full Page</button>
             </div>
         </div>
 
         <div id="tab-roster" class="tab-content hidden">
-            <div class="panel" id="roster-list">Loading Roster...</div>
+            <div class="panel" id="roster-list">Loading...</div>
         </div>
     </div>
 
@@ -89,7 +93,7 @@
             API_KEY: '$2a$10$Rs0hwy8AsGdOhHr2VjH3j.voZoeOgcZ1ddCdfzn.63bqiKTGSW1gW'
         };
 
-        let db = { qrs: [], scans: [] };
+        let db = { qrs: [] };
 
         document.addEventListener('DOMContentLoaded', async () => {
             await loadData();
@@ -101,7 +105,7 @@
                 const r = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, { headers: { 'X-Master-Key': CONFIG.API_KEY } });
                 const d = await r.json();
                 db = d.record;
-            } catch (e) { console.error("Data Load Failed", e); }
+            } catch (e) { console.error("Load error", e); }
         }
 
         async function saveData() {
@@ -110,7 +114,7 @@
                 headers: { 'Content-Type': 'application/json', 'X-Master-Key': CONFIG.API_KEY },
                 body: JSON.stringify(db)
             });
-            showToast("Cloud Synced Successfully");
+            showToast("Cloud Synced");
         }
 
         function handleBadgeSubmit(e) {
@@ -120,7 +124,7 @@
             let rawUrl = document.getElementById('destUrl').value.trim();
 
             if (!isStandard) {
-                if (rawUrl.startsWith('Ch') || (!rawUrl.includes('http') && rawUrl.length > 20)) {
+                if (rawUrl.startsWith('Ch') || (!rawUrl.includes('http') && rawUrl.length > 15)) {
                     rawUrl = `https://search.google.com/local/writereview?placeid=${rawUrl}`;
                 }
             }
@@ -129,6 +133,7 @@
                 id,
                 company: document.getElementById('companyName').value,
                 name: document.getElementById('techName').value,
+                logo: document.getElementById('logoUrl').value,
                 url: rawUrl,
                 type: isStandard ? 'standard' : 'review'
             };
@@ -143,62 +148,39 @@
             });
         }
 
-        function renderAll() {
-            const companies = [...new Set(db.qrs.map(q => q.company))];
-            document.getElementById('roster-list').innerHTML = companies.map(c => `
-                <div style="margin-bottom:25px;">
-                    <h4 style="color:var(--primary); margin-bottom:10px; border-bottom:1px solid var(--glass-border); padding-bottom:5px;">${c}</h4>
-                    ${db.qrs.filter(q => q.company === c).map(q => {
-                        const gateUrl = window.location.origin + "/gate/?id=" + q.id;
-                        return `
-                            <div class="roster-item">
-                                <span style="font-size:0.9rem;"><strong>${q.name}</strong></span>
-                                <div style="display:flex; gap:8px;">
-                                    <button class="btn btn-outline" style="padding: 6px 12px; font-size: 0.75rem;" onclick="copyToClipboard('${gateUrl}')">Copy Link</button>
-                                    <button class="btn btn-outline" style="padding: 6px 12px; font-size: 0.75rem;" onclick="editQR('${q.id}')">Edit</button>
-                                    <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.75rem;" onclick="previewById('${q.id}')">QR</button>
-                                </div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            `).join('') || "No clients found yet.";
-        }
-
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => showToast("Copied to Clipboard!"));
-        }
-
         function previewBadge(data) {
             document.getElementById('prevName').textContent = data.name;
             document.getElementById('prevInitials').textContent = data.name[0].toUpperCase();
+            
+            const logoEl = document.getElementById('prevLogo');
+            if (data.logo) { logoEl.src = data.logo; logoEl.classList.remove('hidden'); } 
+            else { logoEl.classList.add('hidden'); }
+
             document.getElementById('qrcode').innerHTML = "";
             const finalUrl = data.type === 'standard' ? data.url : window.location.origin + "/gate/?id=" + data.id;
-            new QRCode(document.getElementById('qrcode'), { text: finalUrl, width: 200, height: 200 });
+            new QRCode(document.getElementById('qrcode'), { text: finalUrl, width: 220, height: 220 });
             document.getElementById('badge-preview-area').classList.remove('hidden');
+        }
+
+        function renderAll() {
+            const companies = [...new Set(db.qrs.map(q => q.company))];
+            document.getElementById('roster-list').innerHTML = companies.map(c => `
+                <div style="margin-bottom:20px;">
+                    <h4 style="color:var(--primary);">${c}</h4>
+                    ${db.qrs.filter(q => q.company === c).map(q => `
+                        <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid var(--glass-border);">
+                            <span>${q.name}</span>
+                            <button class="btn btn-outline" style="padding:4px 8px; font-size:12px;" onclick="previewById('${q.id}')">View Badge</button>
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('') || "Empty Roster";
         }
 
         function previewById(id) {
             const data = db.qrs.find(q => q.id === id);
             previewBadge(data);
             switchTab('create');
-        }
-
-        function editQR(id) {
-            const q = db.qrs.find(item => item.id === id);
-            document.getElementById('edit-id').value = q.id;
-            document.getElementById('companyName').value = q.company;
-            document.getElementById('techName').value = q.name;
-            document.getElementById('destUrl').value = q.url;
-            document.getElementById('isStandard').checked = q.type === 'standard';
-            document.getElementById('submit-btn').textContent = "Update Client";
-            switchTab('create');
-        }
-
-        function resetForm() {
-            document.querySelector('form').reset();
-            document.getElementById('edit-id').value = "";
-            document.getElementById('submit-btn').textContent = "Save to Cloud";
         }
 
         function switchTab(tab) {
@@ -209,9 +191,14 @@
         }
 
         function showToast(m) { 
-            const t = document.getElementById('toast'); 
-            t.textContent = m; t.style.display = 'block'; 
+            const t = document.getElementById('toast'); t.textContent = m; t.style.display = 'block'; 
             setTimeout(() => t.style.display = 'none', 3000); 
+        }
+
+        function resetForm() {
+            document.querySelector('form').reset();
+            document.getElementById('edit-id').value = "";
+            document.getElementById('submit-btn').textContent = "Generate Badge";
         }
     </script>
 </body>
