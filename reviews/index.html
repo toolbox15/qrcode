@@ -56,13 +56,13 @@
                 <h3 id="form-title" style="margin-bottom:15px;">Add New Client/Tech</h3>
                 <form onsubmit="handleBadgeSubmit(event)">
                     <input type="hidden" id="edit-id">
-                    <input type="text" id="companyName" class="form-input" placeholder="Company (e.g. Kavana's Plumbing)" required>
-                    <input type="text" id="techName" class="form-input" placeholder="Tech Name (e.g. Henry)" required>
+                    <input type="text" id="companyName" class="form-input" placeholder="Company (e.g. Mac Arthurs Restaurant)" required>
+                    <input type="text" id="techName" class="form-input" placeholder="Staff Name (e.g. Table 5 / Server Name)" required>
                     <input type="text" id="destUrl" class="form-input" placeholder="Paste Place ID or Full URL" required>
                     
                     <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px;">
                         <input type="checkbox" id="isStandard" style="width: 20px; height: 20px;">
-                        <label for="isStandard">Standard QR (Bypass Review Gate)</label>
+                        <label for="isStandard">Standard QR (Bypass Review Gate - Good for Menus)</label>
                     </div>
                     <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%;">Save to Cloud</button>
                 </form>
@@ -84,7 +84,6 @@
     </div>
 
     <script>
-        // REPLACE THESE WITH YOUR JSONBIN KEYS
         const CONFIG = {
             BIN_ID: '6988ac72ae596e708f1ab357',
             API_KEY: '$2a$10$Rs0hwy8AsGdOhHr2VjH3j.voZoeOgcZ1ddCdfzn.63bqiKTGSW1gW'
@@ -120,9 +119,7 @@
             const isStandard = document.getElementById('isStandard').checked;
             let rawUrl = document.getElementById('destUrl').value.trim();
 
-            // SMART PREFIX LOGIC: Only auto-format if it's NOT a standard QR
             if (!isStandard) {
-                // If it looks like a Place ID (starts with Ch or long string without http)
                 if (rawUrl.startsWith('Ch') || (!rawUrl.includes('http') && rawUrl.length > 20)) {
                     rawUrl = `https://search.google.com/local/writereview?placeid=${rawUrl}`;
                 }
@@ -176,10 +173,7 @@
             document.getElementById('prevName').textContent = data.name;
             document.getElementById('prevInitials').textContent = data.name[0].toUpperCase();
             document.getElementById('qrcode').innerHTML = "";
-            
-            // If Standard, QR goes straight to URL. If Review, QR goes to your /gate/ folder.
             const finalUrl = data.type === 'standard' ? data.url : window.location.origin + "/gate/?id=" + data.id;
-            
             new QRCode(document.getElementById('qrcode'), { text: finalUrl, width: 200, height: 200 });
             document.getElementById('badge-preview-area').classList.remove('hidden');
         }
@@ -211,13 +205,12 @@
             document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
             document.getElementById('tab-' + tab).classList.remove('hidden');
-            event.target.classList.add('active');
+            if (event) event.target.classList.add('active');
         }
 
         function showToast(m) { 
             const t = document.getElementById('toast'); 
-            t.textContent = m; 
-            t.style.display = 'block'; 
+            t.textContent = m; t.style.display = 'block'; 
             setTimeout(() => t.style.display = 'none', 3000); 
         }
     </script>
