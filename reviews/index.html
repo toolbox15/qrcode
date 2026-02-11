@@ -3,203 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIBizService | Agency Manager</title>
+    <title>AIBizService | Reputation Shield Creator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        :root { --primary: #6366f1; --success: #10b981; --dark: #0f172a; --light: #f8fafc; --gray: #64748b; --glass: rgba(255, 255, 255, 0.03); --glass-border: rgba(255, 255, 255, 0.1); }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--light); line-height: 1.6; }
-        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
-        
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px; }
-        .header-left { display: flex; align-items: center; gap: 15px; }
-        .agency-logo { width: 55px; height: 55px; object-fit: contain; }
-        .logo-text { font-size: 1.6rem; font-weight: 900; background: linear-gradient(to right, #818cf8, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        :root { 
+            --primary: #6366f1; 
+            --dark: #0f172a; 
+            --light: #f8fafc; 
+            --glass: rgba(255, 255, 255, 0.05); 
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
 
-        .panel { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 24px; padding: 2rem; margin-bottom: 2rem; backdrop-filter: blur(10px); }
-        .form-input { width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 12px; color: white; margin-bottom: 1rem; }
-        .btn { padding: 12px 24px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; display: inline-block; text-decoration: none; text-align: center; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body { 
+            font-family: 'Inter', -apple-system, sans-serif; 
+            background: var(--dark); 
+            color: var(--light); 
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container { width: 100%; max-width: 900px; }
+
+        /* THE CONTROL PANEL */
+        .panel { 
+            background: var(--glass); 
+            padding: 30px; 
+            border-radius: 24px; 
+            border: 1px solid var(--glass-border); 
+            backdrop-filter: blur(10px);
+            margin-bottom: 40px;
+        }
+
+        h2 { margin-bottom: 20px; font-weight: 800; letter-spacing: -0.5px; }
+
+        .form-input { 
+            width: 100%; 
+            padding: 15px; 
+            margin-bottom: 15px; 
+            border-radius: 12px; 
+            border: 1px solid var(--glass-border); 
+            background: rgba(0,0,0,0.2); 
+            color: white; 
+            font-size: 1rem;
+        }
+
+        .btn { 
+            padding: 16px; 
+            border-radius: 12px; 
+            border: none; 
+            cursor: pointer; 
+            font-weight: 800; 
+            width: 100%; 
+            text-transform: uppercase; 
+            transition: all 0.3s ease;
+        }
+
         .btn-primary { background: var(--primary); color: white; }
-        .btn-outline { background: transparent; border: 1px solid var(--glass-border); color: white; }
-        
-        .nav-tabs { display: flex; gap: 8px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 16px; margin-bottom: 2rem; }
-        .nav-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--gray); border-radius: 10px; cursor: pointer; font-weight: 600; }
-        .nav-tab.active { background: var(--primary); color: white; }
-        
-        /* THE BADGE STYLING */
-        .tech-badge { background: white; color: var(--dark); width: 320px; padding: 30px 20px; border-radius: 24px; margin: 2rem auto; border: 4px solid var(--primary); text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .client-logo-preview { height: 50px; object-fit: contain; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto; }
-        .tech-circle { width: 70px; height: 70px; background: var(--primary); border-radius: 50%; margin: 0 auto 10px; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 900; }
+        .btn-primary:hover { background: #4f46e5; transform: translateY(-2px); }
+
+        /* THE UPDATED BADGE STYLING - CLEAN & PROFESSIONAL */
+        #badge-area { margin-top: 20px; text-align: center; }
+
+        .tech-badge { 
+            background: white; 
+            color: #1e293b; 
+            width: 380px; 
+            padding: 50px 30px; 
+            border-radius: 35px; 
+            margin: 0 auto 30px; 
+            text-align: center; 
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid #e2e8f0;
+        }
+
+        /* LARGE LOGO HERO AREA */
+        .client-logo-hero { 
+            width: 100%; 
+            max-height: 150px; 
+            object-fit: contain; 
+            margin-bottom: 40px; 
+            display: block;
+        }
+
+        #qrcode { 
+            display: inline-block; 
+            padding: 15px; 
+            background: white; 
+            border-radius: 20px;
+            border: 1px solid #f1f5f9;
+        }
+
+        .badge-footer-text { 
+            font-size: 1.2rem; 
+            font-weight: 800; 
+            color: #475569; 
+            margin-top: 30px; 
+            letter-spacing: -0.5px;
+        }
+
+        .print-btn { 
+            background: white; 
+            color: var(--dark); 
+            max-width: 380px; 
+            margin: 0 auto;
+        }
+
         .hidden { display: none; }
-        #toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 12px 24px; border-radius: 12px; display: none; z-index: 1000; }
-        @media print { body * { visibility: hidden; } #badgeExport, #badgeExport * { visibility: visible; } #badgeExport { position: absolute; left: 0; top: 0; width: 100%; border: none; } }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .panel, .print-btn { display: none; }
+            .tech-badge { 
+                box-shadow: none; 
+                margin: 0; 
+                width: 100%; 
+                border: none; 
+                padding: 1in;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <div id="toast">Update Successful</div>
-
-    <div class="container">
-        <header>
-            <div class="header-left">
-                <img src="logo_shield.png" alt="AIBizService" class="agency-logo">
-                <div class="logo-text">AIBizService Admin</div>
-            </div>
-            <a href="../index.html" class="btn btn-outline">Exit</a>
-        </header>
-
-        <nav class="nav-tabs">
-            <button class="nav-tab active" onclick="switchTab('create')">Badge Creator</button>
-            <button class="nav-tab" onclick="switchTab('roster')">Team Roster</button>
-        </nav>
-
-        <div id="tab-create" class="tab-content">
-            <div class="panel">
-                <h3 id="form-title" style="margin-bottom:15px;">Live Demo Setup</h3>
-                <form onsubmit="handleBadgeSubmit(event)">
-                    <input type="hidden" id="edit-id">
-                    <input type="text" id="companyName" class="form-input" placeholder="Company Name" required>
-                    <input type="text" id="techName" class="form-input" placeholder="Tech/Staff Name" required>
-                    <input type="text" id="destUrl" class="form-input" placeholder="Paste Place ID here..." required>
-                    <input type="text" id="logoUrl" class="form-input" placeholder="Client Logo URL (Optional)">
-                    
-                    <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px;">
-                        <input type="checkbox" id="isStandard" style="width: 20px; height: 20px;">
-                        <label for="isStandard">Standard Link (Bypass Review Gate)</label>
-                    </div>
-                    <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%;">Generate Badge</button>
-                </form>
-            </div>
-
-            <div id="badge-preview-area" class="hidden" style="text-align: center;">
-                <div id="badgeExport" class="tech-badge">
-                    <img id="prevLogo" src="" class="client-logo-preview hidden">
-                    <div class="tech-circle" id="prevInitials">??</div>
-                    <h3 id="prevName">Name</h3>
-                    <div id="qrcode" style="display: inline-block; background: white; padding: 10px; margin-top: 15px;"></div>
-                </div>
-                <button class="btn btn-outline" onclick="window.print()">Print Full Page</button>
-            </div>
-        </div>
-
-        <div id="tab-roster" class="tab-content hidden">
-            <div class="panel" id="roster-list">Loading...</div>
-        </div>
+<div class="container">
+    <div class="panel">
+        <h2>AIBizService Shield Generator</h2>
+        <form onsubmit="generateBadge(event)">
+            <input type="text" id="logoUrl" class="form-input" placeholder="Company Logo Image URL (Right-click logo on their site > Copy Image Link)" required>
+            <input type="text" id="placeId" class="form-input" placeholder="Google Place ID (e.g. ChIJERNjlaKrD4gR4AHHDCArRz4)" required>
+            <button type="submit" class="btn btn-primary">Create Branded Shield</button>
+        </form>
     </div>
 
-    <script>
-        const CONFIG = {
-            BIN_ID: '6988ac72ae596e708f1ab357',
-            API_KEY: '$2a$10$Rs0hwy8AsGdOhHr2VjH3j.voZoeOgcZ1ddCdfzn.63bqiKTGSW1gW'
-        };
-
-        let db = { qrs: [] };
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            await loadData();
-            renderAll();
-        });
-
-        async function loadData() {
-            try {
-                const r = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, { headers: { 'X-Master-Key': CONFIG.API_KEY } });
-                const d = await r.json();
-                db = d.record;
-            } catch (e) { console.error("Load error", e); }
-        }
-
-        async function saveData() {
-            await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-Master-Key': CONFIG.API_KEY },
-                body: JSON.stringify(db)
-            });
-            showToast("Cloud Synced");
-        }
-
-        function handleBadgeSubmit(e) {
-            e.preventDefault();
-            const id = document.getElementById('edit-id').value || Math.random().toString(36).substr(2, 9);
-            const isStandard = document.getElementById('isStandard').checked;
-            let rawUrl = document.getElementById('destUrl').value.trim();
-
-            if (!isStandard) {
-                if (rawUrl.startsWith('Ch') || (!rawUrl.includes('http') && rawUrl.length > 15)) {
-                    rawUrl = `https://search.google.com/local/writereview?placeid=${rawUrl}`;
-                }
-            }
-
-            const data = {
-                id,
-                company: document.getElementById('companyName').value,
-                name: document.getElementById('techName').value,
-                logo: document.getElementById('logoUrl').value,
-                url: rawUrl,
-                type: isStandard ? 'standard' : 'review'
-            };
-
-            const index = db.qrs.findIndex(q => q.id === id);
-            if (index > -1) db.qrs[index] = data; else db.qrs.push(data);
+    <div id="badge-area" class="hidden">
+        <div id="badgeExport" class="tech-badge">
+            <img id="prevLogo" src="" class="client-logo-hero" alt="Client Logo">
             
-            saveData().then(() => {
-                renderAll();
-                previewBadge(data);
-                resetForm();
-            });
-        }
-
-        function previewBadge(data) {
-            document.getElementById('prevName').textContent = data.name;
-            document.getElementById('prevInitials').textContent = data.name[0].toUpperCase();
+            <div id="qrcode"></div>
             
-            const logoEl = document.getElementById('prevLogo');
-            if (data.logo) { logoEl.src = data.logo; logoEl.classList.remove('hidden'); } 
-            else { logoEl.classList.add('hidden'); }
+            <p class="badge-footer-text">Scan to Share Your Experience</p>
+        </div>
+        
+        <button onclick="window.print()" class="btn print-btn">Print Professional Flyer</button>
+    </div>
+</div>
 
-            document.getElementById('qrcode').innerHTML = "";
-            const finalUrl = data.type === 'standard' ? data.url : window.location.origin + "/gate/?id=" + data.id;
-            new QRCode(document.getElementById('qrcode'), { text: finalUrl, width: 220, height: 220 });
-            document.getElementById('badge-preview-area').classList.remove('hidden');
-        }
+<script>
+function generateBadge(e) {
+    e.preventDefault();
+    
+    const logo = document.getElementById('logoUrl').value;
+    let pid = document.getElementById('placeId').value.trim();
 
-        function renderAll() {
-            const companies = [...new Set(db.qrs.map(q => q.company))];
-            document.getElementById('roster-list').innerHTML = companies.map(c => `
-                <div style="margin-bottom:20px;">
-                    <h4 style="color:var(--primary);">${c}</h4>
-                    ${db.qrs.filter(q => q.company === c).map(q => `
-                        <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid var(--glass-border);">
-                            <span>${q.name}</span>
-                            <button class="btn btn-outline" style="padding:4px 8px; font-size:12px;" onclick="previewById('${q.id}')">View Badge</button>
-                        </div>
-                    `).join('')}
-                </div>
-            `).join('') || "Empty Roster";
-        }
+    // Builds link to your 'gate' folder: https://angelo-hunt.github.io/gate/?id=...
+    const gateUrl = window.location.origin + "/gate/?id=" + pid;
 
-        function previewById(id) {
-            const data = db.qrs.find(q => q.id === id);
-            previewBadge(data);
-            switchTab('create');
-        }
+    // Update the logo in the preview
+    const logoImg = document.getElementById('prevLogo');
+    logoImg.src = logo;
+    
+    // Clear old QR and generate new one pointing to the GATE
+    const qrContainer = document.getElementById('qrcode');
+    qrContainer.innerHTML = "";
+    
+    new QRCode(qrContainer, {
+        text: gateUrl,
+        width: 250, // Large & sharp for scanning
+        height: 250,
+        colorDark : "#0f172a",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+    });
 
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('tab-' + tab).classList.remove('hidden');
-            if (event) event.target.classList.add('active');
-        }
+    // Reveal the badge
+    document.getElementById('badge-area').classList.remove('hidden');
+}
+</script>
 
-        function showToast(m) { 
-            const t = document.getElementById('toast'); t.textContent = m; t.style.display = 'block'; 
-            setTimeout(() => t.style.display = 'none', 3000); 
-        }
-
-        function resetForm() {
-            document.querySelector('form').reset();
-            document.getElementById('edit-id').value = "";
-            document.getElementById('submit-btn').textContent = "Generate Badge";
-        }
-    </script>
 </body>
 </html>
