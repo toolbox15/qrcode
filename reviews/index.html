@@ -19,7 +19,7 @@
         .nav-tabs { display: flex; gap: 8px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 16px; margin-bottom: 2rem; }
         .nav-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--gray); border-radius: 10px; cursor: pointer; font-weight: 600; }
         .nav-tab.active { background: var(--primary); color: white; }
-        .tech-badge { background: white; color: var(--dark); width: 280px; padding: 30px 20px; border-radius: 24px; margin: 2rem auto; border: 4px solid var(--primary); text-align: center; }
+        .tech-badge { background: white; color: var(--dark); width: 280px; padding: 30px 20px; border-radius: 24px; margin: 2rem auto; border: 4px solid var(--primary); text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
         .tech-circle { width: 70px; height: 70px; background: var(--primary); border-radius: 50%; margin: 0 auto 15px; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 900; }
         .hidden { display: none; }
         .roster-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--glass-border); }
@@ -47,13 +47,13 @@
                 <h3 id="form-title">Create New QR / Badge</h3>
                 <form onsubmit="handleBadgeSubmit(event)">
                     <input type="hidden" id="edit-id">
-                    <input type="text" id="companyName" class="form-input" placeholder="Company Name (e.g. Company B)" required>
-                    <input type="text" id="techName" class="form-input" placeholder="Technician or Label" required>
-                    <input type="url" id="destUrl" class="form-input" placeholder="Destination URL" required>
+                    <input type="text" id="companyName" class="form-input" placeholder="Client Company (e.g. Company B)" required>
+                    <input type="text" id="techName" class="form-input" placeholder="Technician Name or Label" required>
+                    <input type="url" id="destUrl" class="form-input" placeholder="Destination (Review Link or Website)" required>
                     
-                    <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px;">
+                    <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border: 1px solid var(--glass-border);">
                         <input type="checkbox" id="isStandard" style="width: 20px; height: 20px;">
-                        <label for="isStandard">Standard QR (Clean Look / No Gate)</label>
+                        <label for="isStandard">Standard QR (Clean Look / Bypass Review Gate)</label>
                     </div>
                     <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%;">Create & Save</button>
                     <button type="button" id="cancel-edit" class="btn btn-outline hidden" onclick="resetForm()" style="width: 100%; margin-top: 10px;">Cancel Edit</button>
@@ -79,17 +79,6 @@
         </div>
     </div>
 
-    <div id="view-gatekeeper" class="container hidden" style="text-align: center; padding-top: 5vh;">
-        <div class="panel" style="max-width: 500px; margin: 0 auto;">
-            <div class="tech-circle" id="gateInitials">??</div>
-            <h2 id="gateMessage">How was your service?</h2>
-            <div id="starContainer" style="font-size: 3.5rem; gap: 15px; display: flex; justify-content: center;">
-                <span onclick="submitSentiment(1)" style="cursor:pointer">😠</span>
-                <span onclick="submitSentiment(5)" style="cursor:pointer">⭐</span>
-            </div>
-        </div>
-    </div>
-
     <script>
         const CONFIG = {
             BIN_ID: '6988ac72ae596e708f1ab357',
@@ -97,17 +86,10 @@
         };
 
         let db = { qrs: [], scans: [], leads: [] };
-        let currentQR = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
-            const params = new URLSearchParams(window.location.search);
-            if (params.has('id')) {
-                await loadData();
-                loadGatekeeper(params.get('id'));
-            } else {
-                await loadData();
-                renderAll();
-            }
+            await loadData();
+            renderAll();
         });
 
         async function loadData() {
@@ -151,14 +133,16 @@
             const isStandard = data.type === 'standard';
             
             badgeFrame.style.border = isStandard ? "none" : "4px solid var(--primary)";
+            badgeFrame.style.boxShadow = isStandard ? "none" : "0 20px 25px -5px rgba(0,0,0,0.5)";
             document.getElementById('prevInitials').style.display = isStandard ? "none" : "flex";
             document.getElementById('prevName').style.display = isStandard ? "none" : "block";
             document.getElementById('prevName').textContent = data.name;
             document.getElementById('prevInitials').textContent = data.name[0].toUpperCase();
 
             document.getElementById('qrcode').innerHTML = "";
-            const finalUrl = isStandard ? data.url : window.location.origin + window.location.pathname + "?id=" + data.id;
-            new QRCode(document.getElementById('qrcode'), { text: finalUrl, width: 180, height: 180 });
+            // Points to the gate folder for review badges
+            const finalUrl = isStandard ? data.url : window.location.origin + "/gate/?id=" + data.id;
+            new QRCode(document.getElementById('qrcode'), { text: finalUrl, width: 200, height: 200 });
             document.getElementById('badge-preview-area').classList.remove('hidden');
         }
 
@@ -185,52 +169,44 @@
         }
 
         function renderAll() {
-            // Render Roster with Categories
             const companies = [...new Set(db.qrs.map(q => q.company))];
             document.getElementById('roster-list').innerHTML = companies.map(c => `
                 <div style="margin-bottom:20px;">
-                    <h4 style="color:var(--primary); margin-bottom:10px;">${c}</h4>
+                    <h4 style="color:var(--primary); margin-bottom:10px; border-bottom:1px solid var(--glass-border); padding-bottom:5px;">${c}</h4>
                     ${db.qrs.filter(q => q.company === c).map(q => `
                         <div class="roster-item">
                             <span><strong>${q.name}</strong> (${q.type})</span>
-                            <button class="btn btn-outline" onclick="editQR('${q.id}')">Edit Link</button>
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn btn-outline" onclick="editQR('${q.id}')">Edit</button>
+                                <button class="btn btn-primary" onclick="previewById('${q.id}')">View QR</button>
+                            </div>
                         </div>
                     `).join('')}
                 </div>
             `).join('') || "No team members found.";
 
-            // Render Scan History
             document.getElementById('scanLog').innerHTML = db.scans.map(s => `
                 <div style="padding:10px; border-bottom:1px solid #333;">
-                    <strong>${s.qrName}</strong>: ${s.type} <br>
+                    <strong>${s.qrName}</strong> (${s.company || 'Standard'}): ${s.type} <br>
                     <small>${new Date(s.time).toLocaleString()}</small>
                 </div>
             `).join('') || "No scans yet.";
+        }
+
+        function previewById(id) {
+            const data = db.qrs.find(q => q.id === id);
+            previewBadge(data);
+            switchTab('create');
         }
 
         function switchTab(tab) {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
             document.getElementById('tab-' + tab).classList.remove('hidden');
-            if(event) event.target.classList.add('active');
+            if(event && event.target.classList.contains('nav-tab')) event.target.classList.add('active');
         }
 
         function showToast(m) { const t = document.getElementById('toast'); t.textContent = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
-
-        function loadGatekeeper(id) {
-            currentQR = db.qrs.find(q => q.id === id);
-            if (!currentQR) return;
-            document.getElementById('gateInitials').textContent = currentQR.name[0].toUpperCase();
-            document.getElementById('view-admin').classList.add('hidden');
-            document.getElementById('view-gatekeeper').classList.remove('hidden');
-        }
-
-        async function submitSentiment(stars) {
-            const type = stars >= 4 ? "5-Star (Success)" : "Negative (Blocked)";
-            db.scans.unshift({ qrName: currentQR.name, type, time: new Date().toISOString() });
-            await saveData();
-            if(stars >= 4) window.location.href = currentQR.url; else alert("Feedback sent to management.");
-        }
     </script>
 </body>
 </html>
