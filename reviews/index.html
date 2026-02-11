@@ -25,6 +25,7 @@
         .nav-tabs { display: flex; gap: 8px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 16px; margin-bottom: 2rem; }
         .nav-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--gray); border-radius: 10px; cursor: pointer; font-weight: 600; }
         .nav-tab.active { background: var(--primary); color: white; }
+        
         .tech-badge { background: white; color: var(--dark); width: 280px; padding: 30px 20px; border-radius: 24px; margin: 2rem auto; border: 4px solid var(--primary); text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
         .tech-circle { width: 70px; height: 70px; background: var(--primary); border-radius: 50%; margin: 0 auto 15px; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 900; }
         .hidden { display: none; }
@@ -57,8 +58,8 @@
                 <form onsubmit="handleBadgeSubmit(event)">
                     <input type="hidden" id="edit-id">
                     <input type="text" id="companyName" class="form-input" placeholder="Client Company (e.g. Company B)" required>
-                    <input type="text" id="techName" class="form-input" placeholder="Technician Name or Label" required>
-                    <input type="url" id="destUrl" class="form-input" placeholder="Destination (Review Link or Website)" required>
+                    <input type="text" id="techName" class="form-input" placeholder="Technician Name" required>
+                    <input type="url" id="destUrl" class="form-input" placeholder="Destination URL (Google or Website)" required>
                     
                     <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border: 1px solid var(--glass-border);">
                         <input type="checkbox" id="isStandard" style="width: 20px; height: 20px;">
@@ -75,7 +76,7 @@
                     <h3 id="prevName">Name</h3>
                     <div id="qrcode" style="display: inline-block; background: white; padding: 10px; margin-top: 15px;"></div>
                 </div>
-                <button class="btn btn-outline" onclick="window.print()">Print/Screenshot</button>
+                <button class="btn btn-outline" onclick="window.print()">Print or Screenshot</button>
             </div>
         </div>
 
@@ -113,7 +114,7 @@
                 headers: { 'Content-Type': 'application/json', 'X-Master-Key': CONFIG.API_KEY },
                 body: JSON.stringify(db)
             });
-            showToast("Database Updated");
+            showToast("Cloud Database Updated");
         }
 
         function handleBadgeSubmit(e) {
@@ -154,6 +155,41 @@
             document.getElementById('badge-preview-area').classList.remove('hidden');
         }
 
+        function renderAll() {
+            const companies = [...new Set(db.qrs.map(q => q.company))];
+            document.getElementById('roster-list').innerHTML = companies.map(c => `
+                <div style="margin-bottom:20px;">
+                    <h4 style="color:var(--primary); margin-bottom:10px; border-bottom:1px solid var(--glass-border); padding-bottom:5px;">${c}</h4>
+                    ${db.qrs.filter(q => q.company === c).map(q => {
+                        const liveUrl = window.location.origin + "/gate/?id=" + q.id;
+                        return `
+                            <div class="roster-item">
+                                <span><strong>${q.name}</strong> (${q.type})</span>
+                                <div style="display:flex; gap:10px;">
+                                    <button class="btn btn-outline" style="padding: 8px 12px; font-size: 0.8rem;" onclick="copyToClipboard('${liveUrl}')">Copy Link</button>
+                                    <button class="btn btn-outline" style="padding: 8px 12px; font-size: 0.8rem;" onclick="editQR('${q.id}')">Edit</button>
+                                    <button class="btn btn-primary" style="padding: 8px 12px; font-size: 0.8rem;" onclick="previewById('${q.id}')">View QR</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `).join('') || "No team members found.";
+
+            document.getElementById('scanLog').innerHTML = db.scans.map(s => `
+                <div style="padding:10px; border-bottom:1px solid #333;">
+                    <strong>${s.qrName}</strong> (${s.company || 'Standard'}): ${s.type} <br>
+                    <small>${new Date(s.time).toLocaleString()}</small>
+                </div>
+            `).join('') || "No scans yet.";
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast("Link copied to clipboard!");
+            });
+        }
+
         function editQR(id) {
             const item = db.qrs.find(q => q.id === id);
             document.getElementById('edit-id').value = item.id;
@@ -168,43 +204,18 @@
             switchTab('create');
         }
 
+        function previewById(id) {
+            const data = db.qrs.find(q => q.id === id);
+            previewBadge(data);
+            switchTab('create');
+        }
+
         function resetForm() {
             document.getElementById('edit-id').value = "";
             document.getElementById('form-title').textContent = "Create New QR / Badge";
             document.getElementById('submit-btn').textContent = "Create & Save";
             document.getElementById('cancel-edit').classList.add('hidden');
             document.querySelector('form').reset();
-        }
-
-        function renderAll() {
-            const companies = [...new Set(db.qrs.map(q => q.company))];
-            document.getElementById('roster-list').innerHTML = companies.map(c => `
-                <div style="margin-bottom:20px;">
-                    <h4 style="color:var(--primary); margin-bottom:10px; border-bottom:1px solid var(--glass-border); padding-bottom:5px;">${c}</h4>
-                    ${db.qrs.filter(q => q.company === c).map(q => `
-                        <div class="roster-item">
-                            <span><strong>${q.name}</strong> (${q.type})</span>
-                            <div style="display:flex; gap:10px;">
-                                <button class="btn btn-outline" onclick="editQR('${q.id}')">Edit</button>
-                                <button class="btn btn-primary" onclick="previewById('${q.id}')">View QR</button>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `).join('') || "No team members found.";
-
-            document.getElementById('scanLog').innerHTML = db.scans.map(s => `
-                <div style="padding:10px; border-bottom:1px solid #333;">
-                    <strong>${s.qrName}</strong> (${s.company || 'Standard'}): ${s.type} <br>
-                    <small>${new Date(s.time).toLocaleString()}</small>
-                </div>
-            `).join('') || "No scans yet.";
-        }
-
-        function previewById(id) {
-            const data = db.qrs.find(q => q.id === id);
-            previewBadge(data);
-            switchTab('create');
         }
 
         function switchTab(tab) {
