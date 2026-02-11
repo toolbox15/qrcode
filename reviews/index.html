@@ -10,7 +10,13 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--light); line-height: 1.6; }
         .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
-        .logo { font-size: 1.5rem; font-weight: 900; background: linear-gradient(to right, #818cf8, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        /* Header with Transparent Logo Support */
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px; }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .agency-logo { width: 55px; height: 55px; object-fit: contain; }
+        .logo-text { font-size: 1.6rem; font-weight: 900; background: linear-gradient(to right, #818cf8, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
         .panel { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 24px; padding: 2rem; margin-bottom: 2rem; backdrop-filter: blur(10px); }
         .form-input { width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 12px; color: white; margin-bottom: 1rem; }
         .btn { padding: 12px 24px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; }
@@ -31,8 +37,11 @@
     <div id="toast">Update Successful</div>
 
     <div id="view-admin" class="container">
-        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-            <div class="logo">AIBizService Agency Admin</div>
+        <header>
+            <div class="header-left">
+                <img src="logo_shield.png" alt="AIBizService Shield" class="agency-logo">
+                <div class="logo-text">AIBizService Admin</div>
+            </div>
             <button class="btn btn-outline" onclick="window.location.href='../index.html'">Main Site</button>
         </header>
 
@@ -104,7 +113,7 @@
                 headers: { 'Content-Type': 'application/json', 'X-Master-Key': CONFIG.API_KEY },
                 body: JSON.stringify(db)
             });
-            showToast("Cloud Database Updated");
+            showToast("Database Updated");
         }
 
         function handleBadgeSubmit(e) {
@@ -140,7 +149,6 @@
             document.getElementById('prevInitials').textContent = data.name[0].toUpperCase();
 
             document.getElementById('qrcode').innerHTML = "";
-            // Points to the gate folder for review badges
             const finalUrl = isStandard ? data.url : window.location.origin + "/gate/?id=" + data.id;
             new QRCode(document.getElementById('qrcode'), { text: finalUrl, width: 200, height: 200 });
             document.getElementById('badge-preview-area').classList.remove('hidden');
