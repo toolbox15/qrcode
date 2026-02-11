@@ -34,10 +34,12 @@
         .nav-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--gray); border-radius: 10px; cursor: pointer; font-weight: 600; }
         .nav-tab.active { background: var(--primary); color: white; }
 
+        /* Tech Badge Styles */
         .tech-badge { background: white; color: var(--dark); width: 280px; padding: 30px 20px; border-radius: 24px; margin: 2rem auto; border: 4px solid var(--primary); text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
         .tech-circle { width: 70px; height: 70px; background: var(--primary); border-radius: 50%; margin: 0 auto 15px; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 900; }
         .badge-title { font-size: 0.7rem; font-weight: 800; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
 
+        /* Star Rating UI */
         .star-rating { font-size: 3.5rem; margin: 1.5rem 0; display: flex; justify-content: center; gap: 15px; }
         .star-btn { cursor: pointer; transition: transform 0.2s; }
         .star-btn:hover { transform: scale(1.2); }
@@ -104,13 +106,13 @@
             <div class="panel form-panel">
                 <h3>Create New QR / Badge</h3>
                 <form onsubmit="generateBadge(event)">
-                    <input type="text" id="techName" class="form-input" placeholder="Technician Name" required>
+                    <input type="text" id="techName" class="form-input" placeholder="Technician Name or Label" required>
                     <input type="url" id="googleUrl" class="form-input" placeholder="Destination URL (Google Link or Website)" required>
                     
                     <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px; border: 1px solid var(--glass-border);">
                         <input type="checkbox" id="isStandard" style="width: 20px; height: 20px; cursor: pointer;">
                         <label for="isStandard" style="margin: 0; color: #818cf8; font-weight: bold; cursor: pointer;">
-                            Standard QR (Bypass Review Gate)
+                            Standard QR (No Badge Styling / No Review Gate)
                         </label>
                     </div>
 
@@ -119,7 +121,7 @@
             </div>
 
             <div id="badge-preview-area" class="hidden" style="text-align: center;">
-                <div class="tech-badge" id="badgeExport">
+                <div id="badgeExport" class="tech-badge">
                     <div class="tech-circle" id="prevInitials">??</div>
                     <h3 id="prevName">Name</h3>
                     <div class="badge-title">Verified Service Pro</div>
@@ -140,7 +142,7 @@
 
     <script>
         const CONFIG = {
-            BIN_ID: '6988ac72ae596e708f1ab357',
+            BIN_ID: '6988ac72ae596e708f1ab357', // Pre-wired to your new bin
             API_KEY: '$2a$10$Rs0hwy8AsGdOhHr2VjH3j.voZoeOgcZ1ddCdfzn.63bqiKTGSW1gW'
         };
 
@@ -219,16 +221,41 @@
             db.qrs.push({ id, name, url, type: isStandard ? 'standard' : 'review' });
             await saveData();
             
-            document.getElementById('prevName').textContent = name;
-            document.getElementById('prevInitials').textContent = name[0].toUpperCase();
-            document.getElementById('qrcode').innerHTML = "";
+            const badgeFrame = document.getElementById('badgeExport');
+            const prevInitials = document.getElementById('prevInitials');
+            const prevName = document.getElementById('prevName');
+            const badgeTitle = document.querySelector('.badge-title');
 
+            if (isStandard) {
+                // CLEAN QR MODE
+                badgeFrame.style.border = "none";
+                badgeFrame.style.boxShadow = "none";
+                badgeFrame.style.background = "white"; // Keep white background for scanning
+                badgeFrame.style.width = "auto";
+                badgeFrame.style.padding = "20px";
+                prevInitials.style.display = "none";
+                prevName.style.display = "none";
+                badgeTitle.style.display = "none";
+            } else {
+                // TECHNICIAN BADGE MODE
+                badgeFrame.className = "tech-badge"; // Restore default CSS
+                badgeFrame.style = ""; // Reset inline styles
+                prevInitials.style.display = "flex";
+                prevName.style.display = "block";
+                badgeTitle.style.display = "block";
+                prevName.textContent = name;
+                prevInitials.textContent = name[0].toUpperCase();
+            }
+
+            document.getElementById('qrcode').innerHTML = "";
             const finalUrl = isStandard ? url : window.location.origin + window.location.pathname + "?id=" + id;
 
             new QRCode(document.getElementById('qrcode'), {
                 text: finalUrl,
-                width: 140, height: 140
+                width: 180, 
+                height: 180
             });
+            
             document.getElementById('badge-preview-area').classList.remove('hidden');
             renderAdmin();
             showToast("QR Created Successfully");
