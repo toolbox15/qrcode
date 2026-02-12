@@ -7,23 +7,23 @@
     <style>
         :root { --primary: #6366f1; --dark: #0f172a; --star: #fbbf24; --gray: #94a3b8; }
         body { font-family: sans-serif; background: var(--dark); color: white; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; text-align: center; }
-        .card { background: rgba(255,255,255,0.05); padding: 2rem; border-radius: 24px; max-width: 400px; width: 90%; border: 1px solid rgba(255,255,255,0.1); }
-        .stars { font-size: 3rem; margin: 20px 0; cursor: pointer; color: #475569; }
+        .card { background: rgba(255,255,255,0.05); padding: 2.5rem; border-radius: 28px; max-width: 400px; width: 90%; border: 1px solid rgba(255,255,255,0.1); }
+        .stars { font-size: 3.5rem; margin: 25px 0; cursor: pointer; color: #475569; display: flex; justify-content: center; gap: 8px; }
         .star.active { color: var(--star); }
-        .btn { display: block; width: 100%; padding: 15px; border-radius: 12px; border: none; background: var(--primary); color: white; font-weight: 700; cursor: pointer; text-decoration: none; margin-top: 10px; }
-        textarea { width: 100%; height: 100px; margin-top: 15px; border-radius: 12px; padding: 10px; display: none; background: #1e293b; color: white; border: 1px solid #334155; }
+        .btn { display: block; width: 100%; padding: 18px; border-radius: 15px; border: none; background: var(--primary); color: white; font-weight: 700; font-size: 1.1rem; cursor: pointer; text-decoration: none; margin-top: 15px; }
+        textarea { width: 100%; height: 120px; margin-top: 15px; border-radius: 15px; padding: 12px; display: none; background: #1e293b; color: white; border: 1px solid #334155; font-size: 1rem; }
         .hidden { display: none; }
-        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--dark); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--dark); display: flex; align-items: center; justify-content: center; z-index: 100; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="loading">Connecting...</div>
+    <div id="loading">Connecting to Secure Gate...</div>
 
     <div class="card" id="mainCard">
-        <img id="logo" style="max-height: 100px; margin-bottom: 20px;" class="hidden">
-        <h2 id="bizName">How did we do?</h2>
-        <p>Rate your experience with <strong id="techName">our team</strong>.</p>
+        <img id="logo" style="max-height: 120px; width: 100%; object-fit: contain; margin-bottom: 20px;" class="hidden">
+        <h2 id="bizName">Share Your Feedback</h2>
+        <p>How was your service with <strong id="techName">our team</strong> today?</p>
         
         <div class="stars">
             <span class="star" data-val="1">★</span>
@@ -40,7 +40,6 @@
 
     <script>
         const CONFIG = { BIN_ID: '6988ac72ae596e708f1ab357', API_KEY: '$2a$10$Rs0hwy8AsGdOhHr2VjH3j.voZoeOgcZ1ddCdfzn.63bqiKTGSW1gW' };
-        let badge = null;
         let gUrl = "";
 
         async function init() {
@@ -52,18 +51,24 @@
                 const r = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, { headers: { 'X-Master-Key': CONFIG.API_KEY }, cache: 'no-store' });
                 const d = await r.json();
                 const qrs = d.record.qrs;
-                badge = qrs.find(q => q.id === id);
+                const badge = qrs.find(q => q.id === id);
 
                 if (!badge) throw new Error("Not Found");
 
+                // 404 PREVENTION: Format the URL correctly
+                gUrl = badge.url;
+                if (!gUrl.startsWith('http')) {
+                    gUrl = `https://search.google.com/local/writereview?placeid=${gUrl}`;
+                }
+
                 // DEVICE LOCK CHECK
                 if (badge.lockedTo && badge.lockedTo !== myToken) {
-                    document.body.innerHTML = "<h2>⚠️ Access Denied</h2><p>This badge is locked to another device.</p>";
+                    document.body.innerHTML = "<div class='card'><h2>⚠️ Access Denied</h2><p>This badge is registered to another device.</p><p>Sharing badges is prohibited.</p></div>";
                     return;
                 }
 
                 if (!badge.lockedTo) {
-                    const newToken = Math.random().toString(36).substr(2, 10);
+                    const newToken = Math.random().toString(36).substr(2, 12);
                     badge.lockedTo = newToken;
                     localStorage.setItem(lockKey, newToken);
                     await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`, {
@@ -75,10 +80,9 @@
 
                 document.getElementById('bizName').textContent = badge.company;
                 document.getElementById('techName').textContent = badge.name;
-                gUrl = badge.url;
                 if(badge.logo) { document.getElementById('logo').src = badge.logo; document.getElementById('logo').classList.remove('hidden'); }
                 document.getElementById('loading').style.display = "none";
-            } catch (e) { document.body.innerHTML = "<h2>Connection Error</h2>"; }
+            } catch (e) { document.body.innerHTML = "<h2>System Error</h2><p>Please scan the code again.</p>"; }
         }
 
         document.querySelectorAll('.star').forEach(s => {
