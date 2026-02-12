@@ -3,108 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Feedback</title>
-    <style>
-        :root { --primary: #6366f1; --bg: #0f172a; --card: #ffffff; }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        body { 
-            font-family: 'Inter', -apple-system, sans-serif; 
-            background: var(--bg); 
-            display: flex; align-items: center; justify-content: center; 
-            min-height: 100vh; padding: 20px;
-        }
-
-        .card { 
-            background: var(--card); 
-            width: 100%; max-width: 400px; 
-            padding: 40px 30px; 
-            border-radius: 30px; 
-            text-align: center; 
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            animation: fadeIn 0.6s ease-out;
-        }
-
-        .logo { 
-            width: 180px; max-height: 100px; 
-            object-fit: contain; margin-bottom: 30px; 
-        }
-
-        h2 { color: #1e293b; font-size: 1.5rem; margin-bottom: 10px; font-weight: 800; }
-        p { color: #64748b; margin-bottom: 30px; font-size: 0.95rem; }
-
-        .stars { 
-            display: flex; justify-content: center; gap: 10px; 
-            margin-bottom: 30px; direction: rtl; 
-        }
-        .stars span { 
-            font-size: 45px; cursor: pointer; color: #e2e8f0; 
-            transition: color 0.2s, transform 0.2s; 
-        }
-        .stars span:hover, .stars span:hover ~ span { color: #fbbf24; transform: scale(1.1); }
-        .stars span.active, .stars span.active ~ span { color: #fbbf24; }
-
-        .btn { 
-            display: block; width: 100%; 
-            padding: 18px; border-radius: 15px; 
-            font-weight: 700; font-size: 1rem;
-            text-decoration: none; transition: 0.3s;
-            transform: translateY(20px); opacity: 0;
-            pointer-events: none;
-        }
-        .btn.visible { transform: translateY(0); opacity: 1; pointer-events: auto; }
-        
-        .btn-google { background: #4285f4; color: white; box-shadow: 0 4px 14px rgba(66, 133, 244, 0.4); }
-        .btn-private { background: #f1f5f9; color: #475569; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+    <title>Review Redirect</title>
 </head>
-<body>
-
-<div class="card">
-    <img id="clientLogo" src="https://graysonsewer.com/wp-content/uploads/2021/04/Grayson-Sewer-Drain-Logo-1.png" class="logo" alt="Logo">
+<body style="background: #0f172a; color: white; font-family: sans-serif; text-align: center; padding-top: 50px;">
     
-    <h2>Rate Your Experience</h2>
-    <p id="instruction">Tap a star to rate our service.</p>
-
-    <div class="stars" id="starGroup">
-        <span onclick="rate(5)">★</span><span onclick="rate(4)">★</span><span onclick="rate(3)">★</span><span onclick="rate(2)">★</span><span onclick="rate(1)">★</span>
+    <div id="loader">
+        <h2>Connecting to Review Page...</h2>
+        <p>Please wait a moment.</p>
     </div>
 
-    <a id="actionBtn" href="#" class="btn">Continue</a>
-</div>
+    <script>
+        const CONFIG = {
+            BIN_ID: '6988ac72ae596e708f1ab357',
+            API_KEY: '$2a$10$Rs0hwy8AsGdOhHr2VjH3j.voZoeOgcZ1ddCdfzn.63bqiKTGSW1gW'
+        };
 
-<script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const pid = urlParams.get('id');
+        async function redirect() {
+            // 1. Get the ID from the URL (?id=xxxx)
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
 
-    function rate(n) {
-        // Star Coloring
-        const stars = document.querySelectorAll('.stars span');
-        stars.forEach((s, i) => {
-            // Adjust for RTL logic (index 0 is 5 stars, index 4 is 1 star)
-            const starValue = 5 - i;
-            s.classList.toggle('active', starValue <= n);
-        });
+            if (!id) {
+                document.body.innerHTML = "<h2>Error: No ID found.</h2>";
+                return;
+            }
 
-        const btn = document.getElementById('actionBtn');
-        const instruction = document.getElementById('instruction');
-        btn.classList.add('visible');
+            try {
+                // 2. Fetch the latest data from your Cloud DB
+                const r = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, { 
+                    headers: { 'X-Master-Key': CONFIG.API_KEY } 
+                });
+                const d = await r.json();
+                const badgeData = d.record.qrs.find(q => q.id === id);
 
-        if (n >= 4) {
-            instruction.innerText = "We're glad you're happy!";
-            btn.className = "btn btn-google visible";
-            btn.innerText = "Share on Google";
-            btn.href = `https://search.google.com/local/writereview?placeid=${pid}`;
-        } else {
-            instruction.innerText = "How can we improve?";
-            btn.className = "btn btn-private visible";
-            btn.innerText = "Talk to Us Privately";
-            btn.href = "mailto:andy@aibizservice.com?subject=Feedback for Service";
+                // 3. Send them to the Google URL saved for that tech
+                if (badgeData && badgeData.url) {
+                    window.location.href = badgeData.url;
+                } else {
+                    document.body.innerHTML = "<h2>Error: Review link not found.</h2>";
+                }
+            } catch (e) {
+                console.error(e);
+                document.body.innerHTML = "<h2>Connection Error. Please try again.</h2>";
+            }
         }
-    }
-</script>
 
+        redirect();
+    </script>
 </body>
 </html>
