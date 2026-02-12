@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AIBizService | Agency Manager</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
     <style>
         :root { --primary: #6366f1; --success: #10b981; --dark: #020617; --light: #f8fafc; --gray: #94a3b8; --glass: rgba(255, 255, 255, 0.03); --glass-border: rgba(255, 255, 255, 0.1); }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -24,20 +24,21 @@
         .nav-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--gray); border-radius: 10px; cursor: pointer; font-weight: 600; }
         .nav-tab.active { background: var(--primary); color: white; }
 
-        /* BADGE AREA - Forced White for Capture */
+        /* THE BADGE - Forced Styles for Clean Export */
         #badgeExport { 
             background: white !important; 
             color: #0f172a !important; 
             width: 350px; 
-            padding: 30px 20px; 
+            padding: 30px; 
             border-radius: 24px; 
             margin: 2rem auto; 
             border: 4px solid var(--primary); 
-            text-align: center; 
+            text-align: center;
         }
-        .client-logo-preview { width: 100%; max-height: 120px; object-fit: contain; margin-bottom: 15px; display: block; }
-        .tech-name { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin-top: 10px; }
-        .company-label { font-size: 0.9rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
+        .client-logo-preview { width: 100%; max-height: 110px; object-fit: contain; margin-bottom: 15px; display: block; }
+        .tech-name { font-size: 1.5rem; font-weight: 800; color: #0f172a !important; margin-top: 10px; }
+        .company-label { font-size: 0.9rem; color: #64748b !important; font-weight: 600; text-transform: uppercase; }
+        
         .hidden { display: none; }
         #toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 12px 24px; border-radius: 12px; display: none; z-index: 1000; }
     </style>
@@ -62,17 +63,17 @@
 
         <div id="tab-create" class="tab-content">
             <div class="panel">
-                <h3 id="form-title">Setup Badge</h3>
+                <h3>Setup Badge</h3>
                 <form onsubmit="handleBadgeSubmit(event)">
                     <input type="hidden" id="edit-id">
                     <input type="text" id="companyName" class="form-input" placeholder="Company Name" required>
                     <input type="text" id="techName" class="form-input" placeholder="Tech/Staff Name" required>
                     <input type="text" id="destUrl" class="form-input" placeholder="Paste Place ID or URL here..." required>
-                    <input type="text" id="logoUrl" class="form-input" placeholder="Client Logo URL (e.g. https://website.com/logo.png)">
+                    <input type="text" id="logoUrl" class="form-input" placeholder="Client Logo URL (Required for display)">
                     
                     <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px;">
                         <input type="checkbox" id="isStandard" style="width: 20px; height: 20px;">
-                        <label for="isStandard">Standard Link (Bypass Review Gate)</label>
+                        <label for="isStandard">Standard Link (Bypass Gate)</label>
                     </div>
                     <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%;">Generate Badge</button>
                 </form>
@@ -81,7 +82,7 @@
             <div id="badge-preview-area" class="hidden" style="text-align: center;">
                 <div id="badgeExport">
                     <img id="prevLogo" src="" class="client-logo-preview hidden">
-                    <div id="qrcode" style="display: inline-block; background: white; padding: 10px; margin: 10px 0;"></div>
+                    <div id="qrcode" style="display: inline-block; background: white; padding: 10px; border-radius: 10px;"></div>
                     <div class="tech-name" id="prevName">Name</div>
                     <div class="company-label" id="prevCompany">Company Name</div>
                 </div>
@@ -150,11 +151,8 @@
             const logoEl = document.getElementById('prevLogo');
             
             if (data.logo) { 
-                // We use a proxy or force CORS to ensure the image is NOT "tainted"
-                logoEl.crossOrigin = "Anonymous";
                 logoEl.src = data.logo; 
                 logoEl.onload = () => logoEl.classList.remove('hidden');
-                logoEl.onerror = () => { console.error("Logo failed to load"); logoEl.classList.add('hidden'); };
             } else { 
                 logoEl.classList.add('hidden'); 
             }
@@ -166,31 +164,31 @@
         }
 
         async function downloadBadge() {
-            const badge = document.getElementById('badgeExport');
-            const name = document.getElementById('prevName').textContent || 'badge';
+            const node = document.getElementById('badgeExport');
+            const name = document.getElementById('prevName').textContent || 'Badge';
             
-            showToast("Rendering Image...");
+            showToast("Preparing Image...");
 
-            // html2canvas settings specifically to fix dark background issues
-            const canvas = await html2canvas(badge, {
-                scale: 3, 
-                useCORS: true, 
-                backgroundColor: "#ffffff", // FORCES pure white background
-                logging: false,
-                width: 350,
-                height: badge.offsetHeight,
-                onclone: (clonedDoc) => {
-                    // Force the cloned badge to be visible and white
-                    const clonedBadge = clonedDoc.getElementById('badgeExport');
-                    clonedBadge.style.background = "white";
-                    clonedBadge.style.color = "#0f172a";
+            domtoimage.toPng(node, {
+                bgcolor: '#ffffff',
+                quality: 1.0,
+                style: {
+                    'margin': '0',
+                    'transform': 'scale(1)',
+                    'left': '0',
+                    'top': '0'
                 }
+            })
+            .then(function (dataUrl) {
+                const link = document.createElement('a');
+                link.download = `${name.replace(/\s+/g, '_')}_QR.png`;
+                link.href = dataUrl;
+                link.click();
+            })
+            .catch(function (error) {
+                console.error('oops, something went wrong!', error);
+                showToast("Error saving image.");
             });
-            
-            const link = document.createElement('a');
-            link.download = `${name.replace(/\s+/g, '_')}_QR_Badge.png`;
-            link.href = canvas.toDataURL("image/png");
-            link.click();
         }
 
         function renderAll() {
