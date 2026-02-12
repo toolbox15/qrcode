@@ -100,7 +100,7 @@
             await loadData();
             renderAll();
 
-            // Check for share link in URL
+            // Auto-open badge if ID is in the URL (e.g., ?share=ID)
             const params = new URLSearchParams(window.location.search);
             const shareId = params.get('share');
             if (shareId) previewById(shareId);
@@ -185,9 +185,10 @@
             `).join('') || "Empty Roster";
         }
 
+        // Share button logic
         function shareBadge(id) {
             const shareUrl = window.location.origin + window.location.pathname + "?share=" + id;
-            navigator.clipboard.writeText(shareUrl).then(() => showToast("Link Copied!"));
+            navigator.clipboard.writeText(shareUrl).then(() => showToast("Link Copied to Clipboard!"));
         }
 
         async function deleteBadge(id) {
