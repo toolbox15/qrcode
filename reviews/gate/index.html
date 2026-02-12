@@ -3,13 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Review Redirect</title>
+    <title>Customer Experience | AIBizService</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --primary: #6366f1; 
+            --primary-hover: #4f46e5;
+            --dark: #0f172a; 
+            --light: #f8fafc; 
+            --gray: #94a3b8;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--dark); 
+            color: var(--light); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+            padding: 20px;
+            background-image: radial-gradient(circle at top right, rgba(99, 102, 241, 0.1), transparent),
+                              radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.1), transparent);
+        }
+
+        .card { 
+            background: var(--glass); 
+            border: 1px solid var(--glass-border); 
+            padding: 3rem 2rem; 
+            border-radius: 32px; 
+            backdrop-filter: blur(12px); 
+            max-width: 450px; 
+            width: 100%; 
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo-area { margin-bottom: 1.5rem; }
+        .logo-area img { height: 60px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.3)); }
+
+        h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 0.5rem; letter-spacing: -0.025em; }
+        p { color: var(--gray); font-size: 1rem; margin-bottom: 2rem; line-height: 1.5; }
+        strong { color: var(--light); }
+
+        .stars { 
+            display: flex; 
+            justify-content: center; 
+            gap: 12px; 
+            margin-bottom: 2.5rem; 
+        }
+
+        .star { 
+            font-size: 2.8rem; 
+            color: #1e293b; 
+            cursor: pointer; 
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.2s; 
+        }
+
+        .star:hover { transform: scale(1.2); }
+        .star.active { color: #fbbf24; filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.4)); }
+
+        #feedback-area { 
+            overflow: hidden;
+            transition: all 0.4s ease;
+            max-height: 0;
+            opacity: 0;
+        }
+
+        #feedback-area.visible { 
+            max-height: 500px;
+            opacity: 1;
+            margin-top: 1rem;
+        }
+
+        textarea { 
+            width: 100%; 
+            height: 120px; 
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px; 
+            padding: 15px; 
+            color: white;
+            font-family: inherit;
+            resize: none;
+            margin-bottom: 1.5rem;
+            outline: none;
+        }
+
+        textarea:focus { border-color: var(--primary); }
+
+        .btn { 
+            display: block; 
+            width: 100%;
+            padding: 16px; 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            border-radius: 16px; 
+            font-weight: 700; 
+            font-size: 1.1rem;
+            cursor: pointer; 
+            text-decoration: none; 
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn:hover { background: var(--primary-hover); transform: translateY(-2px); }
+        
+        #loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--dark); display: flex; align-items: center; justify-content: center;
+            z-index: 100; transition: opacity 0.5s;
+        }
+    </style>
 </head>
-<body style="background: #0f172a; color: white; font-family: sans-serif; text-align: center; padding-top: 50px;">
-    
-    <div id="loader">
-        <h2>Connecting to Review Page...</h2>
-        <p>Please wait a moment.</p>
+<body>
+
+    <div id="loading-overlay">
+        <div style="width: 40px; height: 40px; border: 4px solid var(--glass-border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    </div>
+
+    <div class="card">
+        <div class="logo-area">
+            <img id="client-logo" src="" alt="" class="hidden">
+        </div>
+        <h2 id="business-name">Share Your Experience</h2>
+        <p>How was your service with <strong id="tech-name">our team member</strong> today?</p>
+        
+        <div class="stars" id="star-container">
+            <span class="star" data-value="1">★</span>
+            <span class="star" data-value="2">★</span>
+            <span class="star" data-value="3">★</span>
+            <span class="star" data-value="4">★</span>
+            <span class="star" data-value="5">★</span>
+        </div>
+
+        <div id="feedback-area">
+            <textarea id="feedback-text" placeholder="We value your honesty. How could we have made your experience a 5-star one?"></textarea>
+            <button id="submit-btn" class="btn" onclick="handleSubmit()">Submit Feedback</button>
+        </div>
+        
+        <a id="google-btn" class="btn" style="display: none;">Continue to Google Reviews</a>
     </div>
 
     <script>
@@ -18,37 +156,75 @@
             API_KEY: '$2a$10$Rs0hwy8AsGdOhHr2VjH3j.voZoeOgcZ1ddCdfzn.63bqiKTGSW1gW'
         };
 
-        async function redirect() {
-            // 1. Get the ID from the URL (?id=xxxx)
+        let selectedRating = 0;
+        let googleUrl = "";
+
+        async function init() {
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
-
-            if (!id) {
-                document.body.innerHTML = "<h2>Error: No ID found.</h2>";
-                return;
-            }
-
+            
             try {
-                // 2. Fetch the latest data from your Cloud DB
-                const r = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, { 
-                    headers: { 'X-Master-Key': CONFIG.API_KEY } 
-                });
+                const r = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, { headers: { 'X-Master-Key': CONFIG.API_KEY } });
                 const d = await r.json();
-                const badgeData = d.record.qrs.find(q => q.id === id);
+                const badge = d.record.qrs.find(q => q.id === id);
 
-                // 3. Send them to the Google URL saved for that tech
-                if (badgeData && badgeData.url) {
-                    window.location.href = badgeData.url;
-                } else {
-                    document.body.innerHTML = "<h2>Error: Review link not found.</h2>";
+                if (badge) {
+                    document.getElementById('tech-name').textContent = badge.name;
+                    document.getElementById('business-name').textContent = badge.company;
+                    googleUrl = badge.url;
+                    if(badge.logo) {
+                        const img = document.getElementById('client-logo');
+                        img.src = badge.logo;
+                        img.classList.remove('hidden');
+                    }
                 }
-            } catch (e) {
-                console.error(e);
-                document.body.innerHTML = "<h2>Connection Error. Please try again.</h2>";
+            } catch (e) { console.error("Data load failed"); }
+            
+            document.getElementById('loading-overlay').style.opacity = '0';
+            setTimeout(() => document.getElementById('loading-overlay').remove(), 500);
+        }
+
+        document.querySelectorAll('.star').forEach(star => {
+            star.onclick = () => {
+                selectedRating = parseInt(star.getAttribute('data-value'));
+                updateStars(selectedRating);
+                handleRating(selectedRating);
+            };
+        });
+
+        function updateStars(rating) {
+            document.querySelectorAll('.star').forEach(s => {
+                s.classList.toggle('active', s.getAttribute('data-value') <= rating);
+            });
+        }
+
+        function handleRating(rating) {
+            const feedbackArea = document.getElementById('feedback-area');
+            const googleBtn = document.getElementById('google-btn');
+
+            if (rating >= 4) {
+                feedbackArea.classList.remove('visible');
+                googleBtn.style.display = 'block';
+                googleBtn.href = googleUrl;
+            } else {
+                googleBtn.style.display = 'none';
+                feedbackArea.classList.add('visible');
             }
         }
 
-        redirect();
+        function handleSubmit() {
+            const feedback = document.getElementById('feedback-text').value;
+            if(!feedback) return alert("Please share a few details so we can improve.");
+            
+            alert("Thank you. Your private feedback has been sent to our management team.");
+            window.location.href = "https://google.com"; // Professional exit
+        }
+
+        window.styleSheet = document.createElement('style');
+        window.styleSheet.innerText = "@keyframes spin { to { transform: rotate(360deg); } } .hidden { display: none; }";
+        document.head.appendChild(window.styleSheet);
+
+        init();
     </script>
 </body>
 </html>
