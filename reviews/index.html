@@ -24,7 +24,7 @@
         .nav-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--gray); border-radius: 10px; cursor: pointer; font-weight: 600; }
         .nav-tab.active { background: var(--primary); color: white; }
 
-        /* BADGE STYLING - FORCED WHITE */
+        /* THE BADGE - Optimized for Download */
         #badgeExport { 
             background: white !important; 
             color: #0f172a !important; 
@@ -35,9 +35,9 @@
             border: 4px solid var(--primary); 
             text-align: center;
         }
-        .client-logo-preview { width: 100%; max-height: 150px; object-fit: contain; margin-bottom: 15px; display: block; }
-        .tech-name { font-size: 1.5rem; font-weight: 800; color: #0f172a !important; margin-top: 10px; }
-        .company-label { font-size: 0.9rem; color: #64748b !important; font-weight: 600; text-transform: uppercase; }
+        .client-logo-preview { width: 100%; max-height: 150px; object-fit: contain; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto; }
+        .tech-name { font-size: 1.6rem; font-weight: 800; color: #0f172a !important; margin-top: 10px; }
+        .company-label { font-size: 0.95rem; color: #64748b !important; font-weight: 600; text-transform: uppercase; }
         .hidden { display: none; }
         #toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 12px 24px; border-radius: 12px; display: none; z-index: 1000; }
     </style>
@@ -68,7 +68,9 @@
                     <input type="text" id="companyName" class="form-input" placeholder="Company Name" required>
                     <input type="text" id="techName" class="form-input" placeholder="Tech/Staff Name" required>
                     <input type="text" id="destUrl" class="form-input" placeholder="Paste Place ID or URL here..." required>
-                    <input type="text" id="logoUrl" class="form-input" placeholder="Logo URL (ends in .png or .jpg)" onchange="toDataURL(this.value)">
+                    
+                    <label style="display:block; margin-bottom:5px; font-size:0.9rem; color:var(--gray);">Upload Company Logo:</label>
+                    <input type="file" id="logoUpload" class="form-input" accept="image/*" onchange="handleFileUpload(this)">
                     
                     <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px;">
                         <input type="checkbox" id="isStandard" style="width: 20px; height: 20px;">
@@ -111,21 +113,19 @@
             renderAll();
         });
 
-        // Convert URL to Base64 to bypass CORS blocks
-        function toDataURL(url) {
-            if (!url) return;
-            const img = new Image();
-            img.crossOrigin = 'Anonymous';
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                canvas.width = this.naturalWidth;
-                canvas.height = this.naturalHeight;
-                canvas.getContext('2d').drawImage(this, 0, 0);
-                currentBase64Logo = canvas.toDataURL('image/png');
-                document.getElementById('prevLogo').src = currentBase64Logo;
-                document.getElementById('prevLogo').classList.remove('hidden');
-            };
-            img.src = url;
+        // FIXED: Handles local file upload to bypass CORS security issues
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentBase64Logo = e.target.result;
+                    const img = document.getElementById('prevLogo');
+                    img.src = currentBase64Logo;
+                    img.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
         }
 
         async function loadData() {
@@ -155,17 +155,36 @@
                 rawUrl = `https://search.google.com/local/writereview?placeid=${rawUrl}`;
             }
 
-            const data = { id, company: document.getElementById('companyName').value, name: document.getElementById('techName').value, logo: document.getElementById('logoUrl').value, url: rawUrl, type: isStandard ? 'standard' : 'review' };
+            const data = { 
+                id, 
+                company: document.getElementById('companyName').value, 
+                name: document.getElementById('techName').value, 
+                logo: currentBase64Logo, // Save the actual image data
+                url: rawUrl, 
+                type: isStandard ? 'standard' : 'review' 
+            };
+
             const index = db.qrs.findIndex(q => q.id === id);
             if (index > -1) db.qrs[index] = data; else db.qrs.push(data);
             
-            saveData().then(() => { renderAll(); previewBadge(data); resetForm(); });
+            saveData().then(() => { 
+                renderAll(); 
+                previewBadge(data); 
+            });
         }
 
         function previewBadge(data) {
             document.getElementById('prevName').textContent = data.name;
             document.getElementById('prevCompany').textContent = data.company;
-            if (data.logo) toDataURL(data.logo);
+            
+            const logoEl = document.getElementById('prevLogo');
+            if (data.logo) {
+                logoEl.src = data.logo;
+                logoEl.classList.remove('hidden');
+                currentBase64Logo = data.logo;
+            } else {
+                logoEl.classList.add('hidden');
+            }
             
             document.getElementById('qrcode').innerHTML = "";
             const finalUrl = data.type === 'standard' ? data.url : window.location.origin + "/reviews/gate/?id=" + data.id;
@@ -176,16 +195,27 @@
         async function downloadBadge() {
             const node = document.getElementById('badgeExport');
             const name = document.getElementById('prevName').textContent || 'Badge';
-            showToast("Downloading...");
+            
+            showToast("Generating Image...");
 
-            domtoimage.toPng(node, { bgcolor: '#ffffff', quality: 1.0 })
+            // Dom-to-image is now safe because the image is local data (Base64)
+            domtoimage.toPng(node, {
+                bgcolor: '#ffffff',
+                width: 350,
+                height: node.offsetHeight,
+                style: { 'margin': '0 auto' }
+            })
             .then(function (dataUrl) {
                 const link = document.createElement('a');
                 link.download = `${name.replace(/\s+/g, '_')}_QR.png`;
                 link.href = dataUrl;
                 link.click();
+                showToast("Image Saved!");
             })
-            .catch(function (error) { showToast("Error: Link restricted."); });
+            .catch(function (error) {
+                console.error('Error:', error);
+                showToast("Download failed. Try Print.");
+            });
         }
 
         function renderAll() {
@@ -215,7 +245,7 @@
             document.getElementById('companyName').value = data.company;
             document.getElementById('techName').value = data.name;
             document.getElementById('destUrl').value = data.url;
-            document.getElementById('logoUrl').value = data.logo || "";
+            currentBase64Logo = data.logo || "";
             document.getElementById('isStandard').checked = (data.type === 'standard');
             document.getElementById('submit-btn').textContent = "Update Badge";
             switchTab('create');
@@ -241,7 +271,7 @@
 
         function showToast(m) { const t = document.getElementById('toast'); t.textContent = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
 
-        function resetForm() { document.querySelector('form').reset(); document.getElementById('edit-id').value = ""; document.getElementById('submit-btn').textContent = "Generate Badge"; }
+        function resetForm() { document.querySelector('form').reset(); document.getElementById('edit-id').value = ""; document.getElementById('submit-btn').textContent = "Generate Badge"; currentBase64Logo = ""; }
     </script>
 </body>
 </html>
