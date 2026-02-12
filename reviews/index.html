@@ -21,10 +21,12 @@
         .nav-tabs { display: flex; gap: 8px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 16px; margin-bottom: 2rem; }
         .nav-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--gray); border-radius: 10px; cursor: pointer; font-weight: 600; }
         .nav-tab.active { background: var(--primary); color: white; }
-        #badgeExport { background: white !important; color: #0f172a !important; width: 340px; padding: 30px; border-radius: 24px; margin: 2rem auto; border: 4px solid var(--primary); text-align: center; }
+        
+        /* BADGE EXPORT STYLING */
+        #badgeExport { background: white !important; color: #0f172a !important; width: 340px; padding: 30px; border-radius: 24px; margin: 2rem auto; border: 4px solid var(--primary); text-align: center; visibility: visible !important; opacity: 1 !important; }
         .client-logo-preview { width: 100%; max-height: 120px; object-fit: contain; margin-bottom: 15px; }
         .hidden { display: none; }
-        #toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 12px 24px; border-radius: 12px; display: none; }
+        #toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 12px 24px; border-radius: 12px; display: none; z-index: 1000; }
     </style>
 </head>
 <body>
@@ -48,8 +50,8 @@
                     <input type="hidden" id="edit-id">
                     <input type="text" id="companyName" class="form-input" placeholder="Company Name" required>
                     <input type="text" id="techName" class="form-input" placeholder="Tech Name" required>
-                    <input type="text" id="destUrl" class="form-input" placeholder="Google Review URL" required>
-                    <label style="color:var(--gray); font-size: 0.8rem;">Upload Logo (Auto-Compressed):</label>
+                    <input type="text" id="destUrl" class="form-input" placeholder="Google Review URL or Place ID" required>
+                    <label style="color:var(--gray); font-size: 0.8rem;">Company Logo:</label>
                     <input type="file" id="logoUpload" class="form-input" accept="image/*" onchange="compressLogo(this)">
                     <button type="submit" id="submit-btn" class="btn btn-primary">Generate & Sync Badge</button>
                 </form>
@@ -59,8 +61,8 @@
                 <div id="badgeExport">
                     <img id="prevLogo" class="client-logo-preview hidden">
                     <div id="qrcode" style="display:inline-block; margin: 10px 0;"></div>
-                    <h3 id="prevName" style="margin:0;"></h3>
-                    <p id="prevCompany" style="color:gray; font-size:0.9rem; text-transform:uppercase;"></p>
+                    <h3 id="prevName" style="margin:0; font-weight:800;"></h3>
+                    <p id="prevCompany" style="color:gray; font-size:0.9rem; text-transform:uppercase; font-weight:600;"></p>
                 </div>
                 <button class="btn btn-primary" style="background:#10b981; width:340px;" onclick="downloadBadge()">Download Image</button>
             </div>
@@ -78,7 +80,7 @@
 
         async function init() {
             try {
-                const r = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, { headers: { 'X-Master-Key': CONFIG.API_KEY } });
+                const r = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, { headers: { 'X-Master-Key': CONFIG.API_KEY }, cache: 'no-store' });
                 const d = await r.json();
                 db.qrs = d.record.qrs || [];
                 renderRoster();
@@ -138,7 +140,7 @@
                 showToast("Saved Successfully");
                 renderPreview(data);
                 renderRoster();
-            } catch (err) { alert("Save failed. Try a smaller logo."); }
+            } catch (err) { alert("Save failed."); }
             
             btn.disabled = false;
             btn.textContent = "Generate & Sync Badge";
@@ -157,10 +159,7 @@
             if (db.qrs.length === 0) { list.innerHTML = "No badges created."; return; }
             list.innerHTML = db.qrs.map(q => `
                 <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid var(--glass-border);">
-                    <div>
-                        <strong>${q.name}</strong><br>
-                        <span style="font-size:11px; color:var(--gray)">${q.lockedTo ? '🔒 Device Locked' : '🔓 Unlocked'}</span>
-                    </div>
+                    <div><strong>${q.name}</strong><br><span style="font-size:11px; color:var(--gray)">${q.lockedTo ? '🔒 Locked' : '🔓 Unlocked'}</span></div>
                     <div style="display:flex; gap:10px;">
                         <button onclick="editBadge('${q.id}')" style="background:none; border:none; color:var(--primary); cursor:pointer;">Edit</button>
                         ${q.lockedTo ? `<button onclick="resetLock('${q.id}')" style="background:none; border:none; color:var(--success); cursor:pointer;">Reset</button>` : ''}
@@ -172,17 +171,11 @@
 
         async function resetLock(id) {
             const badge = db.qrs.find(q => q.id === id);
-            if (badge && confirm("Allow this badge to be claimed by a new device?")) {
-                badge.lockedTo = null;
-                handleBadgeSubmit({ preventDefault: () => {} }); // Reuse save logic
-            }
+            if (badge && confirm("Unlock this device?")) { badge.lockedTo = null; handleBadgeSubmit({ preventDefault: () => {} }); }
         }
 
         async function deleteBadge(id) {
-            if (confirm("Delete this badge?")) {
-                db.qrs = db.qrs.filter(q => q.id !== id);
-                handleBadgeSubmit({ preventDefault: () => {} });
-            }
+            if (confirm("Delete this badge?")) { db.qrs = db.qrs.filter(q => q.id !== id); handleBadgeSubmit({ preventDefault: () => {} }); }
         }
 
         function editBadge(id) {
@@ -192,17 +185,17 @@
             document.getElementById('techName').value = q.name;
             document.getElementById('destUrl').value = q.url;
             compressedLogoData = q.logo;
+            if(q.logo) { document.getElementById('prevLogo').src = q.logo; document.getElementById('prevLogo').classList.remove('hidden'); }
             switchTab('create');
         }
 
         function downloadBadge() {
             const node = document.getElementById('badgeExport');
-            domtoimage.toPng(node, { bgcolor: 'white' }).then(url => {
-                const link = document.createElement('a');
-                link.download = 'QR_Badge.png';
-                link.href = url;
-                link.click();
-            });
+            const name = document.getElementById('prevName').textContent || 'Badge';
+            showToast("Generating Image...");
+            domtoimage.toPng(node, { bgcolor: '#ffffff', width: 340, height: node.offsetHeight, style: { 'visibility': 'visible', 'opacity': '1' } })
+                .then(url => { const link = document.createElement('a'); link.download = `${name}_QR.png`; link.href = url; link.click(); showToast("Success!"); })
+                .catch(() => showToast("Error saving image."));
         }
 
         function switchTab(tab) {
