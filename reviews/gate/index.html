@@ -3,240 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Experience | AIBizService</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <title>Feedback | AIBizService</title>
     <style>
-        :root { 
-            --primary: #6366f1; 
-            --primary-hover: #4f46e5;
-            --dark: #0f172a; 
-            --light: #f8fafc; 
-            --gray: #94a3b8;
-            --glass: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --star-inactive: #475569;
-            --star-active: #fbbf24;
-            --error: #ef4444;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background: var(--dark); 
-            color: var(--light); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            min-height: 100vh; 
-            padding: 20px;
-            background-image: radial-gradient(circle at top right, rgba(99, 102, 241, 0.1), transparent),
-                              radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.1), transparent);
-        }
-
-        .card { 
-            background: var(--glass); 
-            border: 1px solid var(--glass-border); 
-            padding: 3rem 2rem; 
-            border-radius: 32px; 
-            backdrop-filter: blur(12px); 
-            max-width: 450px; 
-            width: 100%; 
-            text-align: center;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-
-        .logo-area { margin-bottom: 2rem; width: 100%; }
-        .logo-area img { width: 85%; max-height: 180px; object-fit: contain; filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.1)); }
-
-        h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 0.5rem; letter-spacing: -0.025em; }
-        p { color: var(--gray); font-size: 1.1rem; margin-bottom: 2rem; line-height: 1.5; }
-        strong { color: var(--light); font-weight: 800; }
-
-        .stars { display: flex; justify-content: center; gap: 12px; margin-bottom: 2.5rem; }
-        .star { 
-            font-size: 3.2rem; 
-            color: var(--star-inactive); 
-            cursor: pointer; 
-            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.2s; 
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        .star:hover { transform: scale(1.15); color: #64748b; }
-        .star.active { color: var(--star-active); filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.5)); }
-
-        #feedback-area { overflow: hidden; transition: all 0.4s ease; max-height: 0; opacity: 0; }
-        #feedback-area.visible { max-height: 500px; opacity: 1; margin-top: 1rem; }
-
-        textarea { 
-            width: 100%; height: 120px; background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--glass-border); border-radius: 16px; 
-            padding: 15px; color: white; font-family: inherit; resize: none;
-            margin-bottom: 1.5rem; outline: none; font-size: 1rem;
-        }
-
-        .btn { 
-            display: block; width: 100%; padding: 18px; background: var(--primary); 
-            color: white; border: none; border-radius: 18px; font-weight: 800; 
-            font-size: 1.1rem; cursor: pointer; text-decoration: none; transition: 0.3s;
-            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
-        }
-        .btn:hover { background: var(--primary-hover); transform: translateY(-2px); }
-        
-        #loading-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--dark); display: flex; align-items: center; justify-content: center;
-            z-index: 100; transition: opacity 0.5s;
-        }
-
-        .lockout-msg { color: var(--error); font-weight: 700; margin-top: 1rem; }
+        :root { --primary: #6366f1; --dark: #0f172a; --star: #fbbf24; --gray: #94a3b8; }
+        body { font-family: sans-serif; background: var(--dark); color: white; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; text-align: center; }
+        .card { background: rgba(255,255,255,0.05); padding: 2rem; border-radius: 24px; max-width: 400px; width: 90%; border: 1px solid rgba(255,255,255,0.1); }
+        .stars { font-size: 3rem; margin: 20px 0; cursor: pointer; color: #475569; }
+        .star.active { color: var(--star); }
+        .btn { display: block; width: 100%; padding: 15px; border-radius: 12px; border: none; background: var(--primary); color: white; font-weight: 700; cursor: pointer; text-decoration: none; margin-top: 10px; }
+        textarea { width: 100%; height: 100px; margin-top: 15px; border-radius: 12px; padding: 10px; display: none; background: #1e293b; color: white; border: 1px solid #334155; }
         .hidden { display: none; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--dark); display: flex; align-items: center; justify-content: center; z-index: 100; }
     </style>
 </head>
 <body>
 
-    <div id="loading-overlay">
-        <div style="width: 40px; height: 40px; border: 4px solid var(--glass-border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite;"></div>
-    </div>
+    <div id="loading">Connecting...</div>
 
-    <div class="card" id="main-card">
-        <div class="logo-area">
-            <img id="client-logo" src="" alt="Company Logo" class="hidden">
+    <div class="card" id="mainCard">
+        <img id="logo" style="max-height: 100px; margin-bottom: 20px;" class="hidden">
+        <h2 id="bizName">How did we do?</h2>
+        <p>Rate your experience with <strong id="techName">our team</strong>.</p>
+        
+        <div class="stars">
+            <span class="star" data-val="1">★</span>
+            <span class="star" data-val="2">★</span>
+            <span class="star" data-val="3">★</span>
+            <span class="star" data-val="4">★</span>
+            <span class="star" data-val="5">★</span>
         </div>
-        <div id="content-gate">
-            <h2 id="business-name">Share Your Experience</h2>
-            <p>How was your service with <strong id="tech-name">our team</strong> today?</p>
-            
-            <div class="stars" id="star-container">
-                <span class="star" data-value="1">★</span>
-                <span class="star" data-value="2">★</span>
-                <span class="star" data-value="3">★</span>
-                <span class="star" data-value="4">★</span>
-                <span class="star" data-value="5">★</span>
-            </div>
 
-            <div id="feedback-area">
-                <textarea id="feedback-text" placeholder="We value your honesty. How could we have made your experience a 5-star one?"></textarea>
-                <button id="submit-btn" class="btn" onclick="handleSubmit()">Submit Feedback</button>
-            </div>
-            
-            <a id="google-btn" class="btn" style="display: none;">Continue to Google Reviews</a>
-        </div>
+        <textarea id="feedback" placeholder="How can we improve?"></textarea>
+        <button id="submitBtn" class="btn hidden" onclick="sendFeedback()">Submit Feedback</button>
+        <a id="googleBtn" class="btn hidden">Continue to Google</a>
     </div>
 
     <script>
-        const CONFIG = {
-            BIN_ID: '6988ac72ae596e708f1ab357',
-            API_KEY: '$2a$10$Rs0hwy8AsGdOhHr2VjH3j.voZoeOgcZ1ddCdfzn.63bqiKTGSW1gW'
-        };
-
-        let googleUrl = "";
-        let badgeData = null;
-        let allBadges = [];
+        const CONFIG = { BIN_ID: '6988ac72ae596e708f1ab357', API_KEY: '$2a$10$Rs0hwy8AsGdOhHr2VjH3j.voZoeOgcZ1ddCdfzn.63bqiKTGSW1gW' };
+        let badge = null;
+        let gUrl = "";
 
         async function init() {
-            const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
-            
-            if (!id) {
-                showError("Invalid Access Link");
-                return;
-            }
+            const id = new URLSearchParams(window.location.search).get('id');
+            const lockKey = `auth_${id}`;
+            const myToken = localStorage.getItem(lockKey);
 
             try {
-                const r = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, { 
-                    headers: { 'X-Master-Key': CONFIG.API_KEY },
-                    cache: 'no-store' 
-                });
+                const r = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, { headers: { 'X-Master-Key': CONFIG.API_KEY }, cache: 'no-store' });
                 const d = await r.json();
-                allBadges = d.record.qrs;
-                badgeData = allBadges.find(q => q.id === id);
+                const qrs = d.record.qrs;
+                badge = qrs.find(q => q.id === id);
 
-                if (!badgeData) {
-                    showError("Badge Not Found");
+                if (!badge) throw new Error("Not Found");
+
+                // DEVICE LOCK CHECK
+                if (badge.lockedTo && badge.lockedTo !== myToken) {
+                    document.body.innerHTML = "<h2>⚠️ Access Denied</h2><p>This badge is locked to another device.</p>";
                     return;
                 }
 
-                // DEVICE LOCK LOGIC
-                const lockKey = `badge_auth_${id}`;
-                const localToken = localStorage.getItem(lockKey);
-
-                // 1. If badge is locked to another device token
-                if (badgeData.lockedTo && badgeData.lockedTo !== localToken) {
-                    showError("Security Alert: This badge is registered to another device. Sharing is prohibited.");
-                    return;
-                }
-
-                // 2. If badge is NOT locked, claim it for this device
-                if (!badgeData.lockedTo) {
-                    const newToken = Math.random().toString(36).substr(2, 15);
+                if (!badge.lockedTo) {
+                    const newToken = Math.random().toString(36).substr(2, 10);
+                    badge.lockedTo = newToken;
                     localStorage.setItem(lockKey, newToken);
-                    badgeData.lockedTo = newToken;
-                    
-                    // Update Database
                     await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json', 'X-Master-Key': CONFIG.API_KEY },
-                        body: JSON.stringify({ qrs: allBadges })
+                        body: JSON.stringify({ qrs })
                     });
                 }
 
-                // Load Content
-                document.getElementById('tech-name').textContent = badgeData.name;
-                document.getElementById('business-name').textContent = badgeData.company;
-                googleUrl = badgeData.url;
-                if(badgeData.logo) {
-                    const img = document.getElementById('client-logo');
-                    img.src = badgeData.logo;
-                    img.classList.remove('hidden');
+                document.getElementById('bizName').textContent = badge.company;
+                document.getElementById('techName').textContent = badge.name;
+                gUrl = badge.url;
+                if(badge.logo) { document.getElementById('logo').src = badge.logo; document.getElementById('logo').classList.remove('hidden'); }
+                document.getElementById('loading').style.display = "none";
+            } catch (e) { document.body.innerHTML = "<h2>Connection Error</h2>"; }
+        }
+
+        document.querySelectorAll('.star').forEach(s => {
+            s.onclick = () => {
+                const val = s.dataset.val;
+                document.querySelectorAll('.star').forEach(star => star.classList.toggle('active', star.dataset.val <= val));
+                if (val >= 4) {
+                    document.getElementById('googleBtn').classList.remove('hidden');
+                    document.getElementById('googleBtn').href = gUrl;
+                    document.getElementById('feedback').style.display = "none";
+                    document.getElementById('submitBtn').classList.add('hidden');
+                } else {
+                    document.getElementById('googleBtn').classList.add('hidden');
+                    document.getElementById('feedback').style.display = "block";
+                    document.getElementById('submitBtn').classList.remove('hidden');
                 }
-                
-            } catch (e) { 
-                console.error(e);
-                showError("System Connection Error");
-            }
-            
-            document.getElementById('loading-overlay').style.opacity = '0';
-            setTimeout(() => document.getElementById('loading-overlay').remove(), 500);
-        }
-
-        function showError(msg) {
-            document.getElementById('content-gate').innerHTML = `<h2 class="lockout-msg">⚠️ Access Denied</h2><p>${msg}</p><p style="margin-top:20px; font-size:0.9rem;">Contact AIBizService Admin to reset.</p>`;
-            document.getElementById('loading-overlay').style.display = 'none';
-        }
-
-        document.querySelectorAll('.star').forEach(star => {
-            star.onclick = () => {
-                const rating = parseInt(star.getAttribute('data-value'));
-                updateStars(rating);
-                handleRating(rating);
             };
         });
 
-        function updateStars(rating) {
-            document.querySelectorAll('.star').forEach(s => {
-                s.classList.toggle('active', s.getAttribute('data-value') <= rating);
-            });
-        }
-
-        function handleRating(rating) {
-            const feedbackArea = document.getElementById('feedback-area');
-            const googleBtn = document.getElementById('google-btn');
-            if (rating >= 4) {
-                feedbackArea.classList.remove('visible');
-                googleBtn.style.display = 'block';
-                googleBtn.href = googleUrl;
-            } else {
-                googleBtn.style.display = 'none';
-                feedbackArea.classList.add('visible');
-            }
-        }
-
-        function handleSubmit() {
-            const feedback = document.getElementById('feedback-text').value;
-            if(!feedback) return alert("Please share a few details so we can improve.");
-            alert("Thank you. Your private feedback has been sent to our management team.");
-            window.location.href = "https://google.com"; 
+        function sendFeedback() {
+            alert("Feedback sent privately to management. Thank you!");
+            window.location.href = "https://google.com";
         }
 
         init();
