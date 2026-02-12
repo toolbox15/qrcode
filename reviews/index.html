@@ -11,20 +11,23 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--light); line-height: 1.6; }
         .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+        
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px; }
         .header-left { display: flex; align-items: center; gap: 15px; }
         .agency-logo { width: 55px; height: 55px; object-fit: contain; }
         .logo-text { font-size: 1.6rem; font-weight: 900; background: linear-gradient(to right, #818cf8, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
         .panel { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 24px; padding: 2rem; margin-bottom: 2rem; backdrop-filter: blur(10px); }
         .form-input { width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 12px; color: white; margin-bottom: 1rem; }
         .btn { padding: 12px 24px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; display: inline-block; text-decoration: none; text-align: center; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-outline { background: transparent; border: 1px solid var(--glass-border); color: white; }
+        
         .nav-tabs { display: flex; gap: 8px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 16px; margin-bottom: 2rem; }
         .nav-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--gray); border-radius: 10px; cursor: pointer; font-weight: 600; }
         .nav-tab.active { background: var(--primary); color: white; }
-
-        /* THE BADGE - Forced Styles for Clean Export */
+        
+        /* THE BADGE - LOGO SIZE INCREASED */
         #badgeExport { 
             background: white !important; 
             color: #0f172a !important; 
@@ -35,7 +38,7 @@
             border: 4px solid var(--primary); 
             text-align: center;
         }
-        .client-logo-preview { width: 100%; max-height: 110px; object-fit: contain; margin-bottom: 15px; display: block; }
+        .client-logo-preview { width: 100%; max-height: 140px; object-fit: contain; margin-bottom: 15px; display: block; }
         .tech-name { font-size: 1.5rem; font-weight: 800; color: #0f172a !important; margin-top: 10px; }
         .company-label { font-size: 0.9rem; color: #64748b !important; font-weight: 600; text-transform: uppercase; }
         
@@ -69,7 +72,7 @@
                     <input type="text" id="companyName" class="form-input" placeholder="Company Name" required>
                     <input type="text" id="techName" class="form-input" placeholder="Tech/Staff Name" required>
                     <input type="text" id="destUrl" class="form-input" placeholder="Paste Place ID or URL here..." required>
-                    <input type="text" id="logoUrl" class="form-input" placeholder="Client Logo URL (Required for display)">
+                    <input type="text" id="logoUrl" class="form-input" placeholder="Logo URL (ends in .png or .jpg)">
                     
                     <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px;">
                         <input type="checkbox" id="isStandard" style="width: 20px; height: 20px;">
@@ -151,6 +154,7 @@
             const logoEl = document.getElementById('prevLogo');
             
             if (data.logo) { 
+                logoEl.crossOrigin = "anonymous";
                 logoEl.src = data.logo; 
                 logoEl.onload = () => logoEl.classList.remove('hidden');
             } else { 
@@ -167,27 +171,24 @@
             const node = document.getElementById('badgeExport');
             const name = document.getElementById('prevName').textContent || 'Badge';
             
-            showToast("Preparing Image...");
+            showToast("Rendering Image...");
 
+            // New logic to handle external images/CORS better
             domtoimage.toPng(node, {
                 bgcolor: '#ffffff',
-                quality: 1.0,
-                style: {
-                    'margin': '0',
-                    'transform': 'scale(1)',
-                    'left': '0',
-                    'top': '0'
-                }
+                cacheBust: true, // Forces fresh image fetch
+                quality: 1.0
             })
             .then(function (dataUrl) {
                 const link = document.createElement('a');
                 link.download = `${name.replace(/\s+/g, '_')}_QR.png`;
                 link.href = dataUrl;
                 link.click();
+                showToast("Image Saved!");
             })
             .catch(function (error) {
-                console.error('oops, something went wrong!', error);
-                showToast("Error saving image.");
+                console.error('Download error:', error);
+                showToast("Download Error: Check Logo URL");
             });
         }
 
