@@ -21,13 +21,28 @@
         .nav-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--gray); border-radius: 10px; cursor: pointer; font-weight: 600; }
         .nav-tab.active { background: var(--primary); color: white; }
         
-        /* THE BADGE */
-        #badgeExport { background: white !important; color: #0f172a !important; width: 340px; padding: 30px; border-radius: 24px; margin: 2rem auto; border: 4px solid var(--primary); text-align: center; }
-        .client-logo-preview { width: 100%; max-height: 120px; object-fit: contain; margin-bottom: 15px; }
+        /* THE BADGE - ASPECT RATIO FIX */
+        #badgeExport { 
+            background: white !important; 
+            color: #0f172a !important; 
+            width: 340px; 
+            padding: 30px; 
+            border-radius: 24px; 
+            margin: 2rem auto; 
+            border: 4px solid var(--primary); 
+            text-align: center; 
+        }
+        .client-logo-preview { 
+            width: auto; 
+            max-width: 100%; 
+            height: auto; 
+            max-height: 120px; 
+            object-fit: contain; /* Prevents stretching */
+            margin-bottom: 15px; 
+            display: inline-block;
+        }
         .hidden { display: none; }
         #toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 12px 24px; border-radius: 12px; display: none; z-index: 1000; }
-        
-        /* ROSTER STYLING */
         .roster-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--glass-border); }
         .roster-actions { display: flex; gap: 12px; }
         .action-link { background: none; border: none; cursor: pointer; font-weight: 800; font-size: 12px; }
@@ -99,13 +114,20 @@
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const scale = 250 / img.width;
-                    canvas.width = 250;
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Maintain aspect ratio during compression
+                    const MAX_WIDTH = 400;
+                    const scale = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
                     canvas.height = img.height * scale;
-                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                     compressedLogoData = canvas.toDataURL('image/jpeg', 0.8);
-                    document.getElementById('prevLogo').src = compressedLogoData;
-                    document.getElementById('prevLogo').classList.remove('hidden');
+                    
+                    const preview = document.getElementById('prevLogo');
+                    preview.src = compressedLogoData;
+                    preview.classList.remove('hidden');
                 };
                 img.src = e.target.result;
             };
@@ -154,6 +176,11 @@
             document.getElementById('qrcode').innerHTML = "";
             new QRCode(document.getElementById('qrcode'), { text: window.location.origin + "/reviews/gate/?id=" + data.id, width: 200, height: 200 });
             document.getElementById('preview-area').classList.remove('hidden');
+            if (data.logo) {
+                const logo = document.getElementById('prevLogo');
+                logo.src = data.logo;
+                logo.classList.remove('hidden');
+            }
         }
 
         function renderRoster() {
@@ -224,9 +251,23 @@
             const node = document.getElementById('badgeExport');
             const name = document.getElementById('prevName').textContent || 'Badge';
             showToast("Generating Image...");
-            html2canvas(node, { backgroundColor: "#ffffff", scale: 2, useCORS: true }).then(canvas => {
+            html2canvas(node, { 
+                backgroundColor: "#ffffff", 
+                scale: 2, 
+                useCORS: true,
+                onclone: (clonedDoc) => {
+                    // Ensure image is treated correctly during snapshot
+                    const logo = clonedDoc.getElementById('prevLogo');
+                    if (logo) {
+                        logo.style.width = 'auto';
+                        logo.style.height = 'auto';
+                        logo.style.maxWidth = '100%';
+                        logo.style.maxHeight = '120px';
+                    }
+                }
+            }).then(canvas => {
                 const link = document.createElement('a');
-                link.download = `${name}_Badge.png`;
+                link.download = `${name.replace(/\s+/g, '_')}_Badge.png`;
                 link.href = canvas.toDataURL("image/png");
                 link.click();
                 showToast("Success!");
