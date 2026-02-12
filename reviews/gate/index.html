@@ -14,6 +14,8 @@
             --gray: #94a3b8;
             --glass: rgba(255, 255, 255, 0.03);
             --glass-border: rgba(255, 255, 255, 0.1);
+            --star-inactive: #475569; /* Much brighter than background for visibility */
+            --star-active: #fbbf24;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -43,13 +45,20 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        .logo-area { margin-bottom: 1.5rem; }
-        .logo-area img { height: 60px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.3)); }
+        /* PROBLEM FIX: BIGGER LOGO */
+        .logo-area { margin-bottom: 2rem; width: 100%; }
+        .logo-area img { 
+            width: 85%; /* Increased width */
+            max-height: 180px; /* Increased height */
+            object-fit: contain; 
+            filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.1)); 
+        }
 
         h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 0.5rem; letter-spacing: -0.025em; }
-        p { color: var(--gray); font-size: 1rem; margin-bottom: 2rem; line-height: 1.5; }
-        strong { color: var(--light); }
+        p { color: var(--gray); font-size: 1.1rem; margin-bottom: 2rem; line-height: 1.5; }
+        strong { color: var(--light); font-weight: 800; }
 
+        /* PROBLEM FIX: VISIBLE STARS */
         .stars { 
             display: flex; 
             justify-content: center; 
@@ -58,14 +67,15 @@
         }
 
         .star { 
-            font-size: 2.8rem; 
-            color: #1e293b; 
+            font-size: 3.2rem; /* Slightly larger stars */
+            color: var(--star-inactive); /* Slate color is now clearly visible on dark background */
             cursor: pointer; 
             transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.2s; 
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
-        .star:hover { transform: scale(1.2); }
-        .star.active { color: #fbbf24; filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.4)); }
+        .star:hover { transform: scale(1.15); color: #64748b; }
+        .star.active { color: var(--star-active); filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.5)); }
 
         #feedback-area { 
             overflow: hidden;
@@ -83,7 +93,7 @@
         textarea { 
             width: 100%; 
             height: 120px; 
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.3);
             border: 1px solid var(--glass-border);
             border-radius: 16px; 
             padding: 15px; 
@@ -92,33 +102,37 @@
             resize: none;
             margin-bottom: 1.5rem;
             outline: none;
+            font-size: 1rem;
         }
 
-        textarea:focus { border-color: var(--primary); }
+        textarea:focus { border-color: var(--primary); background: rgba(0,0,0,0.4); }
 
         .btn { 
             display: block; 
             width: 100%;
-            padding: 16px; 
+            padding: 18px; 
             background: var(--primary); 
             color: white; 
             border: none; 
-            border-radius: 16px; 
-            font-weight: 700; 
+            border-radius: 18px; 
+            font-weight: 800; 
             font-size: 1.1rem;
             cursor: pointer; 
             text-decoration: none; 
             transition: 0.3s;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
         }
 
-        .btn:hover { background: var(--primary-hover); transform: translateY(-2px); }
+        .btn:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 12px 25px rgba(99, 102, 241, 0.4); }
         
         #loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--dark); display: flex; align-items: center; justify-content: center;
             z-index: 100; transition: opacity 0.5s;
         }
+
+        .hidden { display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -129,10 +143,10 @@
 
     <div class="card">
         <div class="logo-area">
-            <img id="client-logo" src="" alt="" class="hidden">
+            <img id="client-logo" src="" alt="Company Logo" class="hidden">
         </div>
         <h2 id="business-name">Share Your Experience</h2>
-        <p>How was your service with <strong id="tech-name">our team member</strong> today?</p>
+        <p>How was your service with <strong id="tech-name">our team</strong> today?</p>
         
         <div class="stars" id="star-container">
             <span class="star" data-value="1">★</span>
@@ -163,8 +177,16 @@
             const params = new URLSearchParams(window.location.search);
             const id = params.get('id');
             
+            if (!id) {
+                document.getElementById('loading-overlay').innerHTML = "<p>Invalid Link</p>";
+                return;
+            }
+
             try {
-                const r = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, { headers: { 'X-Master-Key': CONFIG.API_KEY } });
+                const r = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, { 
+                    headers: { 'X-Master-Key': CONFIG.API_KEY },
+                    cache: 'no-store' 
+                });
                 const d = await r.json();
                 const badge = d.record.qrs.find(q => q.id === id);
 
@@ -217,12 +239,8 @@
             if(!feedback) return alert("Please share a few details so we can improve.");
             
             alert("Thank you. Your private feedback has been sent to our management team.");
-            window.location.href = "https://google.com"; // Professional exit
+            window.location.href = "https://google.com"; 
         }
-
-        window.styleSheet = document.createElement('style');
-        window.styleSheet.innerText = "@keyframes spin { to { transform: rotate(360deg); } } .hidden { display: none; }";
-        document.head.appendChild(window.styleSheet);
 
         init();
     </script>
