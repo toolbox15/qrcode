@@ -26,9 +26,12 @@
         .nav-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--gray); border-radius: 10px; cursor: pointer; font-weight: 600; }
         .nav-tab.active { background: var(--primary); color: white; }
         
-        .tech-badge { background: white; color: var(--dark); width: 320px; padding: 30px 20px; border-radius: 24px; margin: 2rem auto; border: 4px solid var(--primary); text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .client-logo-preview { height: 50px; object-fit: contain; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto; }
-        .tech-circle { width: 70px; height: 70px; background: var(--primary); border-radius: 50%; margin: 0 auto 10px; color: white; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 900; }
+        /* UPDATED BADGE STYLING */
+        .tech-badge { background: white; color: var(--dark); width: 350px; padding: 25px; border-radius: 24px; margin: 2rem auto; border: 4px solid var(--primary); text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .client-logo-preview { width: 100%; max-height: 120px; object-fit: contain; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto; }
+        .tech-name { font-size: 1.4rem; font-weight: 800; margin-top: 10px; margin-bottom: 2px; }
+        .company-label { font-size: 0.9rem; color: var(--gray); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        
         .hidden { display: none; }
         #toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 12px 24px; border-radius: 12px; display: none; z-index: 1000; }
         @media print { body * { visibility: hidden; } #badgeExport, #badgeExport * { visibility: visible; } #badgeExport { position: absolute; left: 0; top: 0; width: 100%; border: none; } }
@@ -54,13 +57,13 @@
 
         <div id="tab-create" class="tab-content">
             <div class="panel">
-                <h3 id="form-title" style="margin-bottom:15px;">Live Demo Setup</h3>
+                <h3 id="form-title" style="margin-bottom:15px;">Generate QR Badge</h3>
                 <form onsubmit="handleBadgeSubmit(event)">
                     <input type="hidden" id="edit-id">
                     <input type="text" id="companyName" class="form-input" placeholder="Company Name" required>
                     <input type="text" id="techName" class="form-input" placeholder="Tech/Staff Name" required>
-                    <input type="text" id="destUrl" class="form-input" placeholder="Paste Place ID here..." required>
-                    <input type="text" id="logoUrl" class="form-input" placeholder="Client Logo URL (Optional)">
+                    <input type="text" id="destUrl" class="form-input" placeholder="Paste Place ID or URL here..." required>
+                    <input type="text" id="logoUrl" class="form-input" placeholder="Client Logo URL (e.g. https://website.com/logo.png)">
                     
                     <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px;">
                         <input type="checkbox" id="isStandard" style="width: 20px; height: 20px;">
@@ -73,9 +76,9 @@
             <div id="badge-preview-area" class="hidden" style="text-align: center;">
                 <div id="badgeExport" class="tech-badge">
                     <img id="prevLogo" src="" class="client-logo-preview hidden">
-                    <div class="tech-circle" id="prevInitials">??</div>
-                    <h3 id="prevName">Name</h3>
-                    <div id="qrcode" style="display: inline-block; background: white; padding: 10px; margin-top: 15px;"></div>
+                    <div id="qrcode" style="display: inline-block; background: white; padding: 10px; margin-bottom: 10px;"></div>
+                    <div class="tech-name" id="prevName">Name</div>
+                    <div class="company-label" id="prevCompany">Company Name</div>
                 </div>
                 <button class="btn btn-outline" onclick="window.print()">Print Full Page</button>
             </div>
@@ -149,15 +152,19 @@
 
         function previewBadge(data) {
             document.getElementById('prevName').textContent = data.name;
-            document.getElementById('prevInitials').textContent = data.name[0].toUpperCase();
+            document.getElementById('prevCompany').textContent = data.company;
             
             const logoEl = document.getElementById('prevLogo');
-            if (data.logo) { logoEl.src = data.logo; logoEl.classList.remove('hidden'); } 
-            else { logoEl.classList.add('hidden'); }
+            if (data.logo) { 
+                logoEl.src = data.logo; 
+                logoEl.classList.remove('hidden'); 
+            } else { 
+                logoEl.classList.add('hidden'); 
+            }
 
             document.getElementById('qrcode').innerHTML = "";
             const finalUrl = data.type === 'standard' ? data.url : window.location.origin + "/gate/?id=" + data.id;
-            new QRCode(document.getElementById('qrcode'), { text: finalUrl, width: 220, height: 220 });
+            new QRCode(document.getElementById('qrcode'), { text: finalUrl, width: 200, height: 200 });
             document.getElementById('badge-preview-area').classList.remove('hidden');
         }
 
@@ -203,7 +210,6 @@
             if (event && event.target) {
                 event.target.classList.add('active');
             } else {
-                // If switched via code (like previewById), find the right tab button
                 const btn = document.querySelector(`.nav-tab[onclick*="${tab}"]`);
                 if (btn) btn.classList.add('active');
             }
