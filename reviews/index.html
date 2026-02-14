@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIBizService | Agency Manager</title>
+    <title>AIBizService | Secure Admin</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
@@ -11,55 +11,55 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--light); line-height: 1.6; padding: 20px; }
         .container { max-width: 900px; margin: 0 auto; }
+        
+        /* LOGIN OVERLAY */
+        #login-overlay { position: fixed; inset: 0; background: var(--dark); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+        .login-box { background: var(--glass); border: 1px solid var(--glass-border); padding: 2.5rem; border-radius: 24px; width: 100%; max-width: 400px; text-align: center; backdrop-filter: blur(20px); }
+        
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px; }
         .logo-text { font-size: 1.6rem; font-weight: 900; background: linear-gradient(to right, #818cf8, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .panel { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 24px; padding: 2rem; backdrop-filter: blur(10px); }
-        .form-input { width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 12px; color: white; margin-bottom: 1rem; }
-        .btn { padding: 8px 16px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; display: inline-block; text-align: center; }
-        .btn-primary { background: var(--primary); color: white; width: 100%; padding: 12px 24px; }
+        .form-input { width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 12px; color: white; margin-bottom: 1rem; outline: none; }
+        .form-input:focus { border-color: var(--primary); }
+        .btn { padding: 10px 20px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; display: inline-block; text-align: center; }
+        .btn-primary { background: var(--primary); color: white; width: 100%; padding: 14px; }
         .nav-tabs { display: flex; gap: 8px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 16px; margin-bottom: 2rem; }
         .nav-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--gray); border-radius: 10px; cursor: pointer; font-weight: 600; }
         .nav-tab.active { background: var(--primary); color: white; }
-        
-        /* THE BADGE - ASPECT RATIO FIX */
-        #badgeExport { 
-            background: white !important; 
-            color: #0f172a !important; 
-            width: 340px; 
-            padding: 30px; 
-            border-radius: 24px; 
-            margin: 2rem auto; 
-            border: 4px solid var(--primary); 
-            text-align: center; 
-        }
-        .client-logo-preview { 
-            width: auto; 
-            max-width: 100%; 
-            height: auto; 
-            max-height: 120px; 
-            object-fit: contain; /* Prevents stretching */
-            margin-bottom: 15px; 
-            display: inline-block;
-        }
-        .hidden { display: none; }
+        #badgeExport { background: white !important; color: #0f172a !important; width: 340px; padding: 30px; border-radius: 24px; margin: 2rem auto; border: 4px solid var(--primary); text-align: center; }
+        .client-logo-preview { width: auto; max-width: 100%; height: auto; max-height: 120px; object-fit: contain; margin-bottom: 15px; display: inline-block; }
+        .hidden { display: none !important; }
         #toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 12px 24px; border-radius: 12px; display: none; z-index: 1000; }
         .roster-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid var(--glass-border); }
-        .roster-actions { display: flex; gap: 12px; }
-        .action-link { background: none; border: none; cursor: pointer; font-weight: 800; font-size: 12px; }
+        .stats-badge { background: var(--primary); color: white; padding: 2px 8px; border-radius: 6px; font-size: 10px; margin-left: 8px; }
     </style>
 </head>
 <body>
 
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2 style="margin-bottom: 10px;">AIBiz Admin Access</h2>
+            <p style="color: var(--gray); font-size: 0.9rem; margin-bottom: 20px;">Please enter credentials to continue</p>
+            <input type="text" id="userIn" class="form-input" placeholder="Username">
+            <input type="password" id="passIn" class="form-input" placeholder="Password">
+            <button onclick="checkAuth()" class="btn btn-primary">Unlock Manager</button>
+            <p id="login-err" style="color: #ef4444; font-size: 0.8rem; margin-top: 10px; display: none;">Invalid Username or Password</p>
+        </div>
+    </div>
+
     <div id="toast">Saved Successfully</div>
 
-    <div class="container">
+    <div id="main-content" class="container hidden">
         <header>
             <div class="logo-text">AIBizService Admin</div>
-            <a href="../index.html" style="color:var(--gray); text-decoration:none;">Exit</a>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" style="background: var(--glass); color: var(--light); font-size: 11px;" onclick="exportCSV()">Export CSV</button>
+                <button class="btn" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; font-size: 11px;" onclick="location.reload()">Logout</button>
+            </div>
         </header>
 
         <nav class="nav-tabs">
-            <button class="nav-tab active" id="tab-btn-create" onclick="switchTab('create')">Creator</button>
+            <button class="nav-tab active" id="tab-btn-create" onclick="switchTab('create')">Badge Creator</button>
             <button class="nav-tab" id="tab-btn-roster" onclick="switchTab('roster')">Team Roster</button>
         </nav>
 
@@ -72,7 +72,7 @@
                     <input type="text" id="destUrl" class="form-input" placeholder="Google Review URL" required>
                     <label style="color:var(--gray); font-size: 0.8rem;">Upload Logo:</label>
                     <input type="file" id="logoUpload" class="form-input" accept="image/*" onchange="compressLogo(this)">
-                    <button type="submit" id="submit-btn" class="btn btn-primary">Generate & Sync Badge</button>
+                    <button type="submit" id="submit-btn" class="btn btn-primary">Save & Sync Badge</button>
                 </form>
             </div>
 
@@ -83,7 +83,7 @@
                     <h3 id="prevName" style="margin:0; font-weight:800;"></h3>
                     <p id="prevCompany" style="color:gray; font-size:0.9rem; text-transform:uppercase;"></p>
                 </div>
-                <button class="btn btn-primary" style="background:#10b981; width:340px;" onclick="downloadBadge()">Download Image</button>
+                <button class="btn btn-primary" style="background:#10b981; width:340px; margin-bottom: 40px;" onclick="downloadBadge()">Download Image</button>
             </div>
         </div>
 
@@ -93,9 +93,23 @@
     </div>
 
     <script>
+        const AUTH = { user: "Admin", pass: "AIBiz2026" };
         const CONFIG = { BIN_ID: '6988ac72ae596e708f1ab357', API_KEY: '$2a$10$Rs0hwy8AsGdOhHr2VjH3j.voZoeOgcZ1ddCdfzn.63bqiKTGSW1gW' };
         let db = { qrs: [] };
         let compressedLogoData = "";
+
+        // LOGIN SYSTEM
+        function checkAuth() {
+            const u = document.getElementById('userIn').value;
+            const p = document.getElementById('passIn').value;
+            if(u === AUTH.user && p === AUTH.pass) {
+                document.getElementById('login-overlay').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+                init();
+            } else {
+                document.getElementById('login-err').style.display = 'block';
+            }
+        }
 
         async function init() {
             try {
@@ -114,20 +128,13 @@
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    
-                    // Maintain aspect ratio during compression
                     const MAX_WIDTH = 400;
                     const scale = MAX_WIDTH / img.width;
-                    canvas.width = MAX_WIDTH;
-                    canvas.height = img.height * scale;
-                    
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    canvas.width = MAX_WIDTH; canvas.height = img.height * scale;
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
                     compressedLogoData = canvas.toDataURL('image/jpeg', 0.8);
-                    
-                    const preview = document.getElementById('prevLogo');
-                    preview.src = compressedLogoData;
-                    preview.classList.remove('hidden');
+                    document.getElementById('prevLogo').src = compressedLogoData;
+                    document.getElementById('prevLogo').classList.remove('hidden');
                 };
                 img.src = e.target.result;
             };
@@ -137,8 +144,7 @@
         async function handleBadgeSubmit(e) {
             e.preventDefault();
             const btn = document.getElementById('submit-btn');
-            btn.disabled = true;
-            btn.textContent = "Syncing...";
+            btn.disabled = true; btn.textContent = "Syncing...";
 
             const id = document.getElementById('edit-id').value || Math.random().toString(36).substr(2, 9);
             const existing = db.qrs.find(q => q.id === id);
@@ -149,7 +155,8 @@
                 name: document.getElementById('techName').value,
                 url: document.getElementById('destUrl').value,
                 logo: compressedLogoData || (existing ? existing.logo : ""),
-                lockedTo: existing ? existing.lockedTo : null
+                lockedTo: existing ? existing.lockedTo : null,
+                scans: existing ? (existing.scans || 0) : 0
             };
 
             const index = db.qrs.findIndex(q => q.id === id);
@@ -161,13 +168,13 @@
                     headers: { 'Content-Type': 'application/json', 'X-Master-Key': CONFIG.API_KEY },
                     body: JSON.stringify(db)
                 });
-                showToast("Cloud Synced");
+                showToast("Data Synced");
                 renderPreview(data);
                 renderRoster();
+                document.getElementById('edit-id').value = "";
+                document.getElementById('badgeForm').reset();
             } catch (err) { alert("Save failed."); }
-            
-            btn.disabled = false;
-            btn.textContent = "Generate & Sync Badge";
+            btn.disabled = false; btn.textContent = "Save & Sync Badge";
         }
 
         function renderPreview(data) {
@@ -176,64 +183,40 @@
             document.getElementById('qrcode').innerHTML = "";
             new QRCode(document.getElementById('qrcode'), { text: window.location.origin + "/reviews/gate/?id=" + data.id, width: 200, height: 200 });
             document.getElementById('preview-area').classList.remove('hidden');
-            if (data.logo) {
-                const logo = document.getElementById('prevLogo');
-                logo.src = data.logo;
-                logo.classList.remove('hidden');
-            }
+            if (data.logo) { document.getElementById('prevLogo').src = data.logo; document.getElementById('prevLogo').classList.remove('hidden'); }
         }
 
         function renderRoster() {
             const list = document.getElementById('roster-list');
-            if (db.qrs.length === 0) { list.innerHTML = "No badges yet."; return; }
+            if (db.qrs.length === 0) { list.innerHTML = "No active badges."; return; }
             list.innerHTML = db.qrs.map(q => `
                 <div class="roster-item">
                     <div>
-                        <strong>${q.name}</strong><br>
-                        <span style="font-size:11px; color:var(--gray)">${q.company} | ${q.lockedTo ? '🔒 Locked' : '🔓 Unlocked'}</span>
+                        <strong>${q.name}</strong> <span class="stats-badge">${q.scans || 0} Scans</span><br>
+                        <span style="font-size:11px; color:var(--gray)">${q.company} | ${q.lockedTo ? '🔒 Device Locked' : '🔓 Unlocked'}</span>
                     </div>
-                    <div class="roster-actions">
-                        <button onclick="previewById('${q.id}')" class="action-link" style="color:var(--success);">VIEW</button>
-                        <button onclick="editBadge('${q.id}')" class="action-link" style="color:var(--primary);">EDIT</button>
-                        ${q.lockedTo ? `<button onclick="resetLock('${q.id}')" class="action-link" style="color:#f59e0b;">RESET</button>` : ''}
-                        <button onclick="deleteBadge('${q.id}')" class="action-link" style="color:#ef4444;">DELETE</button>
+                    <div style="display:flex; gap:12px;">
+                        <button onclick="previewById('${q.id}')" style="background:none; border:none; color:var(--success); cursor:pointer; font-weight:bold; font-size:11px;">VIEW</button>
+                        <button onclick="editBadge('${q.id}')" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:bold; font-size:11px;">EDIT</button>
+                        ${q.lockedTo ? `<button onclick="resetLock('${q.id}')" style="background:none; border:none; color:#f59e0b; cursor:pointer; font-weight:bold; font-size:11px;">RESET</button>` : ''}
+                        <button onclick="deleteBadge('${q.id}')" style="background:none; border:none; color:#ef4444; cursor:pointer; font-weight:bold; font-size:11px;">DEL</button>
                     </div>
                 </div>
             `).join('');
         }
 
-        function previewById(id) { 
-            const data = db.qrs.find(q => q.id === id); 
-            if(data) { 
-                renderPreview(data); 
-                switchTab('create'); 
-                showToast("Badge Loaded");
-            } 
-        }
+        function previewById(id) { const data = db.qrs.find(q => q.id === id); if(data) { renderPreview(data); switchTab('create'); } }
 
         async function resetLock(id) {
             const badge = db.qrs.find(q => q.id === id);
-            if (badge && confirm("Clear device lock?")) {
-                badge.lockedTo = null;
-                saveDataDirectly();
-            }
+            if (badge && confirm("Clear device lock?")) { badge.lockedTo = null; saveDataDirectly(); }
         }
 
-        async function deleteBadge(id) {
-            if (confirm("Delete this badge?")) {
-                db.qrs = db.qrs.filter(q => q.id !== id);
-                saveDataDirectly();
-            }
-        }
+        async function deleteBadge(id) { if (confirm("Delete this badge?")) { db.qrs = db.qrs.filter(q => q.id !== id); saveDataDirectly(); } }
 
         async function saveDataDirectly() {
-            await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-Master-Key': CONFIG.API_KEY },
-                body: JSON.stringify(db)
-            });
-            renderRoster();
-            showToast("Cloud Updated");
+            await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': CONFIG.API_KEY }, body: JSON.stringify(db) });
+            renderRoster(); showToast("Cloud Updated");
         }
 
         function editBadge(id) {
@@ -250,28 +233,23 @@
         async function downloadBadge() {
             const node = document.getElementById('badgeExport');
             const name = document.getElementById('prevName').textContent || 'Badge';
-            showToast("Generating Image...");
-            html2canvas(node, { 
-                backgroundColor: "#ffffff", 
-                scale: 2, 
-                useCORS: true,
-                onclone: (clonedDoc) => {
-                    // Ensure image is treated correctly during snapshot
-                    const logo = clonedDoc.getElementById('prevLogo');
-                    if (logo) {
-                        logo.style.width = 'auto';
-                        logo.style.height = 'auto';
-                        logo.style.maxWidth = '100%';
-                        logo.style.maxHeight = '120px';
-                    }
-                }
-            }).then(canvas => {
+            html2canvas(node, { backgroundColor: "#ffffff", scale: 2, useCORS: true }).then(canvas => {
                 const link = document.createElement('a');
                 link.download = `${name.replace(/\s+/g, '_')}_Badge.png`;
                 link.href = canvas.toDataURL("image/png");
                 link.click();
-                showToast("Success!");
+                showToast("Image Saved");
             });
+        }
+
+        function exportCSV() {
+            let csv = "Name,Company,Scans,URL,Status\n";
+            db.qrs.forEach(q => { csv += `"${q.name}","${q.company}",${q.scans || 0},"${q.url}","${q.lockedTo ? 'Locked' : 'Unlocked'}"\n`; });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url); a.setAttribute('download', 'AIBiz_Analytics.csv');
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
         }
 
         function switchTab(tab) {
@@ -282,8 +260,6 @@
         }
 
         function showToast(m) { const t = document.getElementById('toast'); t.textContent = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
-
-        init();
     </script>
 </body>
 </html>
