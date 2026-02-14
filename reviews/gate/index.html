@@ -5,15 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Feedback | AIBizService</title>
     <style>
-        :root { --primary: #6366f1; --dark: #0f172a; --star: #fbbf24; --gray: #94a3b8; }
+        :root { --primary: #6366f1; --dark: #0f172a; --star: #fbbf24; --gray: #94a3b8; --success: #10b981; }
         body { font-family: sans-serif; background: var(--dark); color: white; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; text-align: center; }
-        .card { background: rgba(255,255,255,0.05); padding: 2.5rem; border-radius: 28px; max-width: 400px; width: 90%; border: 1px solid rgba(255,255,255,0.1); }
+        .card { background: rgba(255,255,255,0.05); padding: 2.5rem; border-radius: 28px; max-width: 400px; width: 90%; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
         .stars { font-size: 3.5rem; margin: 25px 0; cursor: pointer; color: #475569; display: flex; justify-content: center; gap: 8px; }
         .star.active { color: var(--star); }
-        .btn { display: block; width: 100%; padding: 18px; border-radius: 15px; border: none; background: var(--primary); color: white; font-weight: 700; font-size: 1.1rem; cursor: pointer; text-decoration: none; margin-top: 15px; }
-        textarea { width: 100%; height: 120px; margin-top: 15px; border-radius: 15px; padding: 12px; display: none; background: #1e293b; color: white; border: 1px solid #334155; font-size: 1rem; }
-        .hidden { display: none; }
-        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--dark); display: flex; align-items: center; justify-content: center; z-index: 100; font-weight: bold; }
+        .btn { display: block; width: 100%; padding: 18px; border-radius: 15px; border: none; background: var(--primary); color: white; font-weight: 700; font-size: 1.1rem; cursor: pointer; text-decoration: none; margin-top: 15px; transition: 0.2s; }
+        .btn:active { transform: scale(0.98); }
+        textarea { width: 100%; height: 120px; margin-top: 15px; border-radius: 15px; padding: 12px; display: none; background: #1e293b; color: white; border: 1px solid #334155; font-size: 1rem; box-sizing: border-box; outline: none; }
+        textarea:focus { border-color: var(--primary); }
+        .hidden { display: none !important; }
+        #loading { position: fixed; inset: 0; background: var(--dark); display: flex; align-items: center; justify-content: center; z-index: 100; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -21,26 +23,35 @@
     <div id="loading">Connecting to Secure Gate...</div>
 
     <div class="card" id="mainCard">
-        <img id="logo" style="max-height: 120px; width: 100%; object-fit: contain; margin-bottom: 20px;" class="hidden">
+        <img id="logo" style="max-height: 100px; width: 100%; object-fit: contain; margin-bottom: 20px;" class="hidden">
         <h2 id="bizName">Share Your Feedback</h2>
         <p>How was your service with <strong id="techName">our team</strong> today?</p>
         
-        <div class="stars">
-            <span class="star" data-val="1">★</span>
-            <span class="star" data-val="2">★</span>
-            <span class="star" data-val="3">★</span>
-            <span class="star" data-val="4">★</span>
-            <span class="star" data-val="5">★</span>
+        <div id="rating-step">
+            <div class="stars">
+                <span class="star" data-val="1">★</span>
+                <span class="star" data-val="2">★</span>
+                <span class="star" data-val="3">★</span>
+                <span class="star" data-val="4">★</span>
+                <span class="star" data-val="5">★</span>
+            </div>
+            <textarea id="feedback" placeholder="How can we improve?"></textarea>
+            <button id="submitBtn" class="btn hidden" onclick="sendFeedback()">Submit Feedback</button>
+            <a id="googleBtn" class="btn hidden">Continue to Google</a>
         </div>
 
-        <textarea id="feedback" placeholder="How can we improve?"></textarea>
-        <button id="submitBtn" class="btn hidden" onclick="sendFeedback()">Submit Feedback</button>
-        <a id="googleBtn" class="btn hidden">Continue to Google</a>
+        <div id="thanks-step" class="hidden">
+            <h2 style="color: var(--success);">✔ Thank You</h2>
+            <p>Your private feedback has been sent directly to our management team for review.</p>
+            <button class="btn" onclick="window.location.href='https://google.com'" style="background: transparent; border: 1px solid var(--gray);">Close</button>
+        </div>
     </div>
 
     <script>
         const CONFIG = { BIN_ID: '6988ac72ae596e708f1ab357', API_KEY: '$2a$10$Rs0hwy8AsGdOhHr2VjH3j.voZoeOgcZ1ddCdfzn.63bqiKTGSW1gW' };
         let gUrl = "";
+        let allQRs = [];
+        let currentBadge = null;
 
         async function init() {
             const id = new URLSearchParams(window.location.search).get('id');
@@ -50,45 +61,58 @@
             try {
                 const r = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, { headers: { 'X-Master-Key': CONFIG.API_KEY }, cache: 'no-store' });
                 const d = await r.json();
-                const qrs = d.record.qrs;
-                const badge = qrs.find(q => q.id === id);
+                allQRs = d.record.qrs;
+                currentBadge = allQRs.find(q => q.id === id);
 
-                if (!badge) throw new Error("Not Found");
+                if (!currentBadge) throw new Error("Not Found");
 
-                // 404 PREVENTION: Format the URL correctly
-                gUrl = badge.url;
+                // TRACK SCAN
+                currentBadge.scans = (currentBadge.scans || 0) + 1;
+
+                // FORMAT GOOGLE URL
+                gUrl = currentBadge.url;
                 if (!gUrl.startsWith('http')) {
                     gUrl = `https://search.google.com/local/writereview?placeid=${gUrl}`;
                 }
 
                 // DEVICE LOCK CHECK
-                if (badge.lockedTo && badge.lockedTo !== myToken) {
-                    document.body.innerHTML = "<div class='card'><h2>⚠️ Access Denied</h2><p>This badge is registered to another device.</p><p>Sharing badges is prohibited.</p></div>";
+                if (currentBadge.lockedTo && currentBadge.lockedTo !== myToken) {
+                    document.body.innerHTML = "<div class='card'><h2>⚠️ Access Denied</h2><p>This badge is registered to another device.</p></div>";
                     return;
                 }
 
-                if (!badge.lockedTo) {
+                // INITIAL DEVICE LOCK
+                if (!currentBadge.lockedTo) {
                     const newToken = Math.random().toString(36).substr(2, 12);
-                    badge.lockedTo = newToken;
+                    currentBadge.lockedTo = newToken;
                     localStorage.setItem(lockKey, newToken);
-                    await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'X-Master-Key': CONFIG.API_KEY },
-                        body: JSON.stringify({ qrs })
-                    });
                 }
 
-                document.getElementById('bizName').textContent = badge.company;
-                document.getElementById('techName').textContent = badge.name;
-                if(badge.logo) { document.getElementById('logo').src = badge.logo; document.getElementById('logo').classList.remove('hidden'); }
+                // SYNC SCAN & LOCK TO CLOUD
+                await syncToCloud();
+
+                // UI UPDATES
+                document.getElementById('bizName').textContent = currentBadge.company;
+                document.getElementById('techName').textContent = currentBadge.name;
+                if(currentBadge.logo) { document.getElementById('logo').src = currentBadge.logo; document.getElementById('logo').classList.remove('hidden'); }
                 document.getElementById('loading').style.display = "none";
-            } catch (e) { document.body.innerHTML = "<h2>System Error</h2><p>Please scan the code again.</p>"; }
+
+            } catch (e) { document.body.innerHTML = "<div class='card'><h2>System Error</h2><p>Please scan again.</p></div>"; }
+        }
+
+        async function syncToCloud() {
+            await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'X-Master-Key': CONFIG.API_KEY },
+                body: JSON.stringify({ qrs: allQRs })
+            });
         }
 
         document.querySelectorAll('.star').forEach(s => {
             s.onclick = () => {
                 const val = s.dataset.val;
                 document.querySelectorAll('.star').forEach(star => star.classList.toggle('active', star.dataset.val <= val));
+                
                 if (val >= 4) {
                     document.getElementById('googleBtn').classList.remove('hidden');
                     document.getElementById('googleBtn').href = gUrl;
@@ -102,9 +126,21 @@
             };
         });
 
-        function sendFeedback() {
-            alert("Feedback sent privately to management. Thank you!");
-            window.location.href = "https://google.com";
+        async function sendFeedback() {
+            const fbText = document.getElementById('feedback').value;
+            if(!fbText) return alert("Please let us know how we can improve.");
+            
+            // TRACK "CAUGHT" REVIEW
+            currentBadge.blocked = (currentBadge.blocked || 0) + 1;
+            
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('submitBtn').textContent = "Saving...";
+            
+            await syncToCloud();
+
+            // SWITCH TO THANKS STATE
+            document.getElementById('rating-step').classList.add('hidden');
+            document.getElementById('thanks-step').classList.remove('hidden');
         }
 
         init();
