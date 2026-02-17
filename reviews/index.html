@@ -16,26 +16,27 @@
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px; }
         .logo-text { font-size: 1.6rem; font-weight: 900; background: linear-gradient(to right, #818cf8, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .panel { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 24px; padding: 2rem; backdrop-filter: blur(10px); }
-        .form-input { width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 12px; color: white; margin-bottom: 1rem; outline: none; }
+        .form-input { width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 12px; color: white; margin-bottom: 1rem; outline: none; border: 1px solid var(--glass-border); }
+        .form-input:focus { border-color: var(--primary); }
         .btn { padding: 8px 16px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; display: inline-block; text-align: center; }
         .btn-primary { background: var(--primary); color: white; width: 100%; padding: 14px; }
         .nav-tabs { display: flex; gap: 8px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 16px; margin-bottom: 2rem; }
         .nav-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--gray); border-radius: 10px; cursor: pointer; font-weight: 600; }
         .nav-tab.active { background: var(--primary); color: white; }
-        #badgeExport { background: white !important; color: #0f172a !important; width: 340px; padding: 30px; border-radius: 24px; margin: 2rem auto; border: 4px solid var(--primary); text-align: center; }
-        .client-logo-preview { width: auto; max-width: 100%; height: auto; max-height: 120px; object-fit: contain; margin-bottom: 15px; display: inline-block; }
-        .hidden { display: none !important; }
-        #toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 12px 24px; border-radius: 12px; display: none; z-index: 1000; }
         
+        /* ROSTER & SEARCH STYLES */
+        .search-container { margin-bottom: 1.5rem; }
         .company-group { margin-bottom: 30px; border: 1px solid var(--glass-border); border-radius: 18px; overflow: hidden; background: rgba(255,255,255,0.02); }
         .company-header { background: rgba(99, 102, 241, 0.1); padding: 12px 20px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; }
         .company-title { font-weight: 800; color: var(--primary); text-transform: uppercase; }
         .total-pill { font-size: 0.75rem; color: white; padding: 2px 10px; border-radius: 20px; margin-left: 5px; }
-        .bg-primary { background: var(--primary); }
-        .bg-error { background: var(--error); }
         .roster-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid var(--glass-border); }
-        .tech-info strong { color: #fff; }
-        .tech-stat { font-weight: 700; font-size: 0.85rem; margin-left: 10px; }
+        .roster-item:last-child { border-bottom: none; }
+        
+        #badgeExport { background: white !important; color: #0f172a !important; width: 340px; padding: 30px; border-radius: 24px; margin: 2rem auto; border: 4px solid var(--primary); text-align: center; }
+        .client-logo-preview { width: auto; max-width: 100%; height: auto; max-height: 120px; object-fit: contain; margin-bottom: 15px; display: inline-block; }
+        .hidden { display: none !important; }
+        #toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 12px 24px; border-radius: 12px; display: none; z-index: 1000; }
     </style>
 </head>
 <body>
@@ -62,7 +63,7 @@
         </header>
 
         <nav class="nav-tabs">
-            <button class="nav-tab active" id="tab-btn-create" onclick="switchTab('create')">Creator</button>
+            <button class="nav-tab active" id="tab-btn-create" onclick="switchTab('create')">Badge Creator</button>
             <button class="nav-tab" id="tab-btn-roster" onclick="switchTab('roster')">Roster & Stats</button>
         </nav>
 
@@ -74,22 +75,26 @@
                     <input type="text" id="techName" class="form-input" placeholder="Technician Name" required>
                     <input type="text" id="destUrl" class="form-input" placeholder="Google Review URL" required>
                     <input type="text" id="officePhone" class="form-input" placeholder="Office Phone (for bad reviews)">
+                    <label style="color:var(--gray); font-size: 0.8rem;">Upload Logo:</label>
                     <input type="file" id="logoUpload" class="form-input" accept="image/*" onchange="compressLogo(this)">
-                    <button type="submit" id="submit-btn" class="btn btn-primary">Save Badge</button>
+                    <button type="submit" id="submit-btn" class="btn btn-primary">Save & Sync Badge</button>
                 </form>
             </div>
-            <div id="preview-area" class="hidden" style="text-align: center;">
+            <div id="preview-area" class="hidden" style="text-align: center; margin-top: 20px;">
                 <div id="badgeExport">
                     <img id="prevLogo" class="client-logo-preview hidden">
                     <div id="qrcode" style="display:inline-block; margin: 10px 0;"></div>
-                    <h3 id="prevName" style="margin:0;"></h3>
-                    <p id="prevCompany" style="color:gray; font-size:0.9rem; text-transform:uppercase;"></p>
+                    <h3 id="prevName" style="margin:0; font-weight:800;"></h3>
+                    <p id="prevCompany" style="color:gray; font-size:0.9rem; text-transform:uppercase; font-weight:700;"></p>
                 </div>
-                <button class="btn btn-primary" style="background:#10b981; width:340px; margin-bottom: 40px;" onclick="downloadBadge()">Download Image</button>
+                <button class="btn btn-primary" style="background:#10b981; width:340px; margin-bottom: 40px;" onclick="downloadBadge()">Download Badge Image</button>
             </div>
         </div>
 
         <div id="tab-roster" class="tab-content hidden">
+            <div class="search-container">
+                <input type="text" id="rosterSearch" class="form-input" placeholder="Search Company or Tech..." onkeyup="renderRoster()">
+            </div>
             <div id="roster-list">Loading grouped data...</div>
         </div>
     </div>
@@ -141,7 +146,8 @@
         async function handleBadgeSubmit(e) {
             e.preventDefault();
             const btn = document.getElementById('submit-btn');
-            btn.disabled = true;
+            btn.disabled = true; btn.textContent = "Syncing...";
+
             const id = document.getElementById('edit-id').value || Math.random().toString(36).substr(2, 9);
             const existing = db.qrs.find(q => q.id === id);
             
@@ -162,14 +168,20 @@
 
             await saveDataDirectly();
             renderPreview(data);
-            btn.disabled = false;
+            btn.disabled = false; btn.textContent = "Save & Sync Badge";
         }
 
         function renderRoster() {
             const list = document.getElementById('roster-list');
+            const searchTerm = document.getElementById('rosterSearch').value.toLowerCase();
             if (db.qrs.length === 0) { list.innerHTML = "<div class='panel'>No active badges.</div>"; return; }
 
-            const grouped = db.qrs.reduce((acc, q) => {
+            const filtered = db.qrs.filter(q => 
+                q.name.toLowerCase().includes(searchTerm) || 
+                q.company.toLowerCase().includes(searchTerm)
+            );
+
+            const grouped = filtered.reduce((acc, q) => {
                 const co = q.company || "Unassigned";
                 if (!acc[co]) acc[co] = [];
                 acc[co].push(q);
@@ -186,22 +198,24 @@
                     <div class="company-header">
                         <div>
                             <span class="company-title">${company}</span>
-                            <span class="total-pill bg-primary">Scans: ${companyScans}</span>
-                            <span class="total-pill bg-error">Caught: ${companyBlocked}</span>
+                            <span class="total-pill" style="background:#6366f1;">Scans: ${companyScans}</span>
+                            <span class="total-pill" style="background:#ef4444;">Caught: ${companyBlocked}</span>
                         </div>
-                        <button onclick="resetCompanyStats('${company}')" style="background:none; border:none; color:var(--gray); cursor:pointer; font-size:10px;">RESET WEEK</button>
+                        <button onclick="resetCompanyStats('${company}')" style="background:none; border:none; color:var(--gray); cursor:pointer; font-size:10px; font-weight:800;">RESET WEEK</button>
                     </div>
                     ${techs.map(q => `
                         <div class="roster-item">
                             <div class="tech-info">
                                 <strong>${q.name}</strong> 
-                                <span class="tech-stat" style="color:var(--primary);">${q.scans || 0} scans</span>
-                                <span class="tech-stat" style="color:var(--error);">${q.blocked || 0} caught</span>
+                                <span style="color:#10b981; font-weight:800; font-size:12px; margin-left:10px;">${q.scans || 0} scans</span>
+                                <span style="color:#ef4444; font-weight:800; font-size:12px; margin-left:10px;">${q.blocked || 0} caught</span>
+                                <span style="font-size:10px; color:var(--gray); display:block; margin-top:4px;">${q.lockedTo ? '🔒 Device Locked' : '🔓 Unlocked'}</span>
                             </div>
-                            <div style="display:flex; gap:12px;">
+                            <div style="display:flex; gap:8px;">
                                 <button onclick="previewById('${q.id}')" style="background:none; border:none; color:var(--success); cursor:pointer; font-weight:800; font-size:11px;">VIEW</button>
                                 <button onclick="editBadge('${q.id}')" style="background:none; border:none; color:var(--primary); cursor:pointer; font-weight:800; font-size:11px;">EDIT</button>
-                                <button onclick="deleteBadge('${q.id}')" style="background:none; border:none; color:var(--error); cursor:pointer; font-weight:800; font-size:11px;">DEL</button>
+                                ${q.lockedTo ? `<button onclick="resetLock('${q.id}')" style="background:none; border:none; color:#f59e0b; cursor:pointer; font-weight:800; font-size:11px;">RESET LOCK</button>` : ''}
+                                <button onclick="deleteBadge('${q.id}')" style="background:none; border:none; color:#ef4444; cursor:pointer; font-weight:800; font-size:11px;">DEL</button>
                             </div>
                         </div>
                     `).join('')}
@@ -210,8 +224,17 @@
             }).join('');
         }
 
+        async function resetLock(id) {
+            const badge = db.qrs.find(q => q.id === id);
+            if (badge && confirm(`Clear device lock for ${badge.name}?`)) {
+                badge.lockedTo = null;
+                await saveDataDirectly();
+                showToast("Device Lock Cleared");
+            }
+        }
+
         async function resetCompanyStats(company) {
-            if (confirm(`Reset all weekly stats for ${company}?`)) {
+            if (confirm(`Reset stats for ${company}?`)) {
                 db.qrs.forEach(q => { if(q.company === company) { q.scans = 0; q.blocked = 0; } });
                 await saveDataDirectly();
             }
@@ -222,18 +245,13 @@
             renderRoster(); showToast("Cloud Synced");
         }
 
-        function previewById(id) { const data = db.qrs.find(q => q.id === id); if(data) { renderPreview(data); switchTab('create'); } }
-        function deleteBadge(id) { if (confirm("Delete this badge?")) { db.qrs = db.qrs.filter(q => q.id !== id); saveDataDirectly(); } }
-        function editBadge(id) {
-            const q = db.qrs.find(item => item.id === id);
-            document.getElementById('edit-id').value = q.id;
-            document.getElementById('companyName').value = q.company;
-            document.getElementById('techName').value = q.name;
-            document.getElementById('destUrl').value = q.url;
-            document.getElementById('officePhone').value = q.phone || "";
-            compressedLogoData = q.logo;
-            if(q.logo) { document.getElementById('prevLogo').src = q.logo; document.getElementById('prevLogo').classList.remove('hidden'); }
-            switchTab('create');
+        function previewById(id) {
+            const data = db.qrs.find(q => q.id === id);
+            if(data) {
+                renderPreview(data);
+                switchTab('create');
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }
         }
 
         function renderPreview(data) {
@@ -242,7 +260,11 @@
             document.getElementById('qrcode').innerHTML = "";
             new QRCode(document.getElementById('qrcode'), { text: window.location.origin + "/reviews/gate/?id=" + data.id, width: 200, height: 200 });
             document.getElementById('preview-area').classList.remove('hidden');
-            if (data.logo) { document.getElementById('prevLogo').src = data.logo; document.getElementById('prevLogo').classList.remove('hidden'); }
+            if (data.logo) {
+                const pl = document.getElementById('prevLogo');
+                pl.src = data.logo;
+                pl.classList.remove('hidden');
+            }
         }
 
         async function downloadBadge() {
@@ -256,13 +278,28 @@
             });
         }
 
+        function editBadge(id) {
+            const q = db.qrs.find(item => item.id === id);
+            document.getElementById('edit-id').value = q.id;
+            document.getElementById('companyName').value = q.company;
+            document.getElementById('techName').value = q.name;
+            document.getElementById('destUrl').value = q.url;
+            document.getElementById('officePhone').value = q.phone || "";
+            compressedLogoData = q.logo;
+            if(q.logo) { document.getElementById('prevLogo').src = q.logo; document.getElementById('prevLogo').classList.remove('hidden'); }
+            switchTab('create');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function deleteBadge(id) { if (confirm("Delete this badge?")) { db.qrs = db.qrs.filter(q => q.id !== id); saveDataDirectly(); } }
+
         function exportCSV() {
             let csv = "Company,Technician,Scans,BadReviewsCaught,URL\n";
             db.qrs.forEach(q => { csv += `"${q.company}","${q.name}",${q.scans || 0},${q.blocked || 0},"${q.url}"\n`; });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.setAttribute('href', url); a.setAttribute('download', 'AIBiz_Weekly_Report.csv');
+            a.setAttribute('href', url); a.setAttribute('download', 'AIBiz_Agency_Stats.csv');
             document.body.appendChild(a); a.click(); document.body.removeChild(a);
         }
 
@@ -274,6 +311,8 @@
         }
 
         function showToast(m) { const t = document.getElementById('toast'); t.textContent = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
+
+        init();
     </script>
 </body>
 </html>
