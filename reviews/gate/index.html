@@ -5,14 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Feedback | AIBizService</title>
     <style>
-        :root { --primary: #6366f1; --dark: #0f172a; --star: #fbbf24; --gray: #94a3b8; --success: #10b981; }
+        :root { --primary: #6366f1; --dark: #0f172a; --star: #fbbf24; --gray: #94a3b8; --success: #10b981; --error: #ef4444; }
         body { font-family: sans-serif; background: var(--dark); color: white; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; text-align: center; }
         .card { background: rgba(255,255,255,0.05); padding: 2.5rem; border-radius: 28px; max-width: 400px; width: 90%; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
         .stars { font-size: 3.5rem; margin: 25px 0; cursor: pointer; color: #475569; display: flex; justify-content: center; gap: 8px; }
         .star.active { color: var(--star); }
         .btn { display: block; width: 100%; padding: 18px; border-radius: 15px; border: none; background: var(--primary); color: white; font-weight: 700; font-size: 1.1rem; cursor: pointer; text-decoration: none; margin-top: 15px; transition: 0.2s; }
         .btn-outline { background: transparent; border: 2px solid rgba(255,255,255,0.2); margin-top: 10px; }
-        textarea { width: 100%; height: 120px; margin-top: 15px; border-radius: 15px; padding: 12px; display: none; background: #1e293b; color: white; border: 1px solid #334155; font-size: 1rem; box-sizing: border-box; }
+        .btn-call { background: var(--error); margin-bottom: 10px; font-size: 1rem; padding: 14px; }
+        textarea { width: 100%; height: 100px; margin-top: 15px; border-radius: 15px; padding: 12px; display: none; background: #1e293b; color: white; border: 1px solid #334155; font-size: 1rem; box-sizing: border-box; }
         .hidden { display: none !important; }
         #loading { position: fixed; inset: 0; background: var(--dark); display: flex; align-items: center; justify-content: center; z-index: 100; font-weight: bold; }
     </style>
@@ -42,14 +43,16 @@
             </div>
 
             <div id="negative-options" class="hidden">
-                <textarea id="feedback" placeholder="How can we improve?"></textarea>
+                <p style="font-size: 0.85rem; color: var(--gray); margin-bottom: 10px;">We're sorry to hear that. Please let us fix it:</p>
+                <a id="callBtn" class="btn btn-call hidden">📞 Call Office Now</a>
+                <textarea id="feedback" placeholder="Or describe the issue here..."></textarea>
                 <button id="submitBtn" class="btn" onclick="sendFeedback()">Submit Feedback</button>
             </div>
         </div>
 
         <div id="thanks-step" class="hidden">
-            <h2 style="color: var(--success);">✔ Awesome!</h2>
-            <p>We appreciate your continued loyalty. Your rating has been logged for your technician!</p>
+            <h2 style="color: var(--success);">✔ Thank You</h2>
+            <p>Your feedback has been logged privately. We value your business!</p>
             <button class="btn btn-outline" onclick="window.location.href='https://google.com'">Close</button>
         </div>
     </div>
@@ -73,9 +76,7 @@
 
                 if (!currentBadge) throw new Error("Not Found");
 
-                // LOG INITIAL SCAN
                 currentBadge.scans = (currentBadge.scans || 0) + 1;
-
                 gUrl = currentBadge.url;
                 if (!gUrl.startsWith('http')) gUrl = `https://search.google.com/local/writereview?placeid=${gUrl}`;
 
@@ -94,7 +95,20 @@
 
                 document.getElementById('bizName').textContent = currentBadge.company;
                 document.getElementById('techName').textContent = currentBadge.name;
-                if(currentBadge.logo) { document.getElementById('logo').src = currentBadge.logo; document.getElementById('logo').classList.remove('hidden'); }
+                
+                if(currentBadge.logo) { 
+                    const logoImg = document.getElementById('logo');
+                    logoImg.src = currentBadge.logo; 
+                    logoImg.classList.remove('hidden'); 
+                }
+
+                // Show Call button if phone exists
+                if(currentBadge.phone) {
+                    const cb = document.getElementById('callBtn');
+                    cb.href = `tel:${currentBadge.phone}`;
+                    cb.classList.remove('hidden');
+                }
+
                 document.getElementById('loading').style.display = "none";
 
             } catch (e) { document.body.innerHTML = "<h2>Error</h2>"; }
@@ -112,7 +126,6 @@
             s.onclick = () => {
                 const val = parseInt(s.dataset.val);
                 document.querySelectorAll('.star').forEach(star => star.classList.toggle('active', star.dataset.val <= val));
-                
                 if (val >= 4) {
                     document.getElementById('positive-options').classList.remove('hidden');
                     document.getElementById('negative-options').classList.add('hidden');
@@ -120,6 +133,7 @@
                 } else {
                     document.getElementById('positive-options').classList.add('hidden');
                     document.getElementById('negative-options').classList.remove('hidden');
+                    document.getElementById('feedback').style.display = "block";
                 }
             };
         });
@@ -132,8 +146,19 @@
         async function sendFeedback() {
             const fbText = document.getElementById('feedback').value;
             if(!fbText) return alert("Please share how we can improve.");
+            
+            // Log the 'Caught' review in dashboard
             currentBadge.blocked = (currentBadge.blocked || 0) + 1;
             await syncToCloud();
+
+            // Prepare Email Content
+            const recipient = currentBadge.email || "";
+            const subject = encodeURIComponent(`URGENT FEEDBACK: ${currentBadge.name} (${currentBadge.company})`);
+            const body = encodeURIComponent(`A customer just left negative feedback for ${currentBadge.name}.\n\nMessage:\n"${fbText}"\n\nPlease reach out to them immediately to resolve this.`);
+            
+            // Open user's email app
+            window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
+
             showThanks();
         }
 
