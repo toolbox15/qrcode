@@ -73,6 +73,7 @@
                     <input type="text" id="companyName" class="form-input" placeholder="Company Name" required>
                     <input type="text" id="techName" class="form-input" placeholder="Technician Name" required>
                     <input type="text" id="destUrl" class="form-input" placeholder="Google Review URL" required>
+                    <input type="text" id="officePhone" class="form-input" placeholder="Office Phone (for bad reviews)">
                     <input type="file" id="logoUpload" class="form-input" accept="image/*" onchange="compressLogo(this)">
                     <button type="submit" id="submit-btn" class="btn btn-primary">Save Badge</button>
                 </form>
@@ -149,6 +150,7 @@
                 company: document.getElementById('companyName').value,
                 name: document.getElementById('techName').value,
                 url: document.getElementById('destUrl').value,
+                phone: document.getElementById('officePhone').value,
                 logo: compressedLogoData || (existing ? existing.logo : ""),
                 lockedTo: existing ? existing.lockedTo : null,
                 scans: existing ? (existing.scans || 0) : 0,
@@ -209,15 +211,9 @@
         }
 
         async function resetCompanyStats(company) {
-            if (confirm(`Reset all weekly stats for ${company}? Scans and Caught reviews will return to 0.`)) {
-                db.qrs.forEach(q => {
-                    if(q.company === company) {
-                        q.scans = 0;
-                        q.blocked = 0;
-                    }
-                });
+            if (confirm(`Reset all weekly stats for ${company}?`)) {
+                db.qrs.forEach(q => { if(q.company === company) { q.scans = 0; q.blocked = 0; } });
                 await saveDataDirectly();
-                showToast("Stats Reset for " + company);
             }
         }
 
@@ -234,6 +230,7 @@
             document.getElementById('companyName').value = q.company;
             document.getElementById('techName').value = q.name;
             document.getElementById('destUrl').value = q.url;
+            document.getElementById('officePhone').value = q.phone || "";
             compressedLogoData = q.logo;
             if(q.logo) { document.getElementById('prevLogo').src = q.logo; document.getElementById('prevLogo').classList.remove('hidden'); }
             switchTab('create');
