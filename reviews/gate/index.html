@@ -11,20 +11,19 @@
         .stars { font-size: 3.5rem; margin: 25px 0; cursor: pointer; color: #475569; display: flex; justify-content: center; gap: 8px; }
         .star.active { color: var(--star); }
         .btn { display: block; width: 100%; padding: 18px; border-radius: 15px; border: none; background: var(--primary); color: white; font-weight: 700; font-size: 1.1rem; cursor: pointer; text-decoration: none; margin-top: 15px; transition: 0.2s; }
-        .btn:active { transform: scale(0.98); }
-        textarea { width: 100%; height: 120px; margin-top: 15px; border-radius: 15px; padding: 12px; display: none; background: #1e293b; color: white; border: 1px solid #334155; font-size: 1rem; box-sizing: border-box; outline: none; }
-        textarea:focus { border-color: var(--primary); }
+        .btn-outline { background: transparent; border: 2px solid rgba(255,255,255,0.2); margin-top: 10px; }
+        textarea { width: 100%; height: 120px; margin-top: 15px; border-radius: 15px; padding: 12px; display: none; background: #1e293b; color: white; border: 1px solid #334155; font-size: 1rem; box-sizing: border-box; }
         .hidden { display: none !important; }
         #loading { position: fixed; inset: 0; background: var(--dark); display: flex; align-items: center; justify-content: center; z-index: 100; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="loading">Connecting to Secure Gate...</div>
+    <div id="loading">Connecting...</div>
 
     <div class="card" id="mainCard">
         <img id="logo" style="max-height: 100px; width: 100%; object-fit: contain; margin-bottom: 20px;" class="hidden">
-        <h2 id="bizName">Share Your Feedback</h2>
+        <h2 id="bizName">Feedback</h2>
         <p>How was your service with <strong id="techName">our team</strong> today?</p>
         
         <div id="rating-step">
@@ -35,15 +34,23 @@
                 <span class="star" data-val="4">★</span>
                 <span class="star" data-val="5">★</span>
             </div>
-            <textarea id="feedback" placeholder="How can we improve?"></textarea>
-            <button id="submitBtn" class="btn hidden" onclick="sendFeedback()">Submit Feedback</button>
-            <a id="googleBtn" class="btn hidden">Continue to Google</a>
+
+            <div id="positive-options" class="hidden">
+                <p style="font-size: 0.9rem; color: var(--gray); margin-bottom: 10px;">Thank you! Please choose an option:</p>
+                <a id="googleBtn" class="btn">Leave Google Review</a>
+                <button class="btn btn-outline" onclick="showThanks()">I'm a Regular (Already Reviewed)</button>
+            </div>
+
+            <div id="negative-options" class="hidden">
+                <textarea id="feedback" placeholder="How can we improve?"></textarea>
+                <button id="submitBtn" class="btn" onclick="sendFeedback()">Submit Feedback</button>
+            </div>
         </div>
 
         <div id="thanks-step" class="hidden">
-            <h2 style="color: var(--success);">✔ Thank You</h2>
-            <p>Your private feedback has been sent directly to our management team for review.</p>
-            <button class="btn" onclick="window.location.href='https://google.com'" style="background: transparent; border: 1px solid var(--gray);">Close</button>
+            <h2 style="color: var(--success);">✔ Awesome!</h2>
+            <p>We appreciate your continued loyalty. Your rating has been logged for your technician!</p>
+            <button class="btn btn-outline" onclick="window.location.href='https://google.com'">Close</button>
         </div>
     </div>
 
@@ -66,38 +73,31 @@
 
                 if (!currentBadge) throw new Error("Not Found");
 
-                // TRACK SCAN
+                // LOG INITIAL SCAN
                 currentBadge.scans = (currentBadge.scans || 0) + 1;
 
-                // FORMAT GOOGLE URL
                 gUrl = currentBadge.url;
-                if (!gUrl.startsWith('http')) {
-                    gUrl = `https://search.google.com/local/writereview?placeid=${gUrl}`;
-                }
+                if (!gUrl.startsWith('http')) gUrl = `https://search.google.com/local/writereview?placeid=${gUrl}`;
 
-                // DEVICE LOCK CHECK
                 if (currentBadge.lockedTo && currentBadge.lockedTo !== myToken) {
-                    document.body.innerHTML = "<div class='card'><h2>⚠️ Access Denied</h2><p>This badge is registered to another device.</p></div>";
+                    document.body.innerHTML = "<div class='card'><h2>⚠️ Access Denied</h2></div>";
                     return;
                 }
 
-                // INITIAL DEVICE LOCK
                 if (!currentBadge.lockedTo) {
                     const newToken = Math.random().toString(36).substr(2, 12);
                     currentBadge.lockedTo = newToken;
                     localStorage.setItem(lockKey, newToken);
                 }
 
-                // SYNC SCAN & LOCK TO CLOUD
                 await syncToCloud();
 
-                // UI UPDATES
                 document.getElementById('bizName').textContent = currentBadge.company;
                 document.getElementById('techName').textContent = currentBadge.name;
                 if(currentBadge.logo) { document.getElementById('logo').src = currentBadge.logo; document.getElementById('logo').classList.remove('hidden'); }
                 document.getElementById('loading').style.display = "none";
 
-            } catch (e) { document.body.innerHTML = "<div class='card'><h2>System Error</h2><p>Please scan again.</p></div>"; }
+            } catch (e) { document.body.innerHTML = "<h2>Error</h2>"; }
         }
 
         async function syncToCloud() {
@@ -110,37 +110,31 @@
 
         document.querySelectorAll('.star').forEach(s => {
             s.onclick = () => {
-                const val = s.dataset.val;
+                const val = parseInt(s.dataset.val);
                 document.querySelectorAll('.star').forEach(star => star.classList.toggle('active', star.dataset.val <= val));
                 
                 if (val >= 4) {
-                    document.getElementById('googleBtn').classList.remove('hidden');
+                    document.getElementById('positive-options').classList.remove('hidden');
+                    document.getElementById('negative-options').classList.add('hidden');
                     document.getElementById('googleBtn').href = gUrl;
-                    document.getElementById('feedback').style.display = "none";
-                    document.getElementById('submitBtn').classList.add('hidden');
                 } else {
-                    document.getElementById('googleBtn').classList.add('hidden');
-                    document.getElementById('feedback').style.display = "block";
-                    document.getElementById('submitBtn').classList.remove('hidden');
+                    document.getElementById('positive-options').classList.add('hidden');
+                    document.getElementById('negative-options').classList.remove('hidden');
                 }
             };
         });
 
-        async function sendFeedback() {
-            const fbText = document.getElementById('feedback').value;
-            if(!fbText) return alert("Please let us know how we can improve.");
-            
-            // TRACK "CAUGHT" REVIEW
-            currentBadge.blocked = (currentBadge.blocked || 0) + 1;
-            
-            document.getElementById('submitBtn').disabled = true;
-            document.getElementById('submitBtn').textContent = "Saving...";
-            
-            await syncToCloud();
-
-            // SWITCH TO THANKS STATE
+        function showThanks() {
             document.getElementById('rating-step').classList.add('hidden');
             document.getElementById('thanks-step').classList.remove('hidden');
+        }
+
+        async function sendFeedback() {
+            const fbText = document.getElementById('feedback').value;
+            if(!fbText) return alert("Please share how we can improve.");
+            currentBadge.blocked = (currentBadge.blocked || 0) + 1;
+            await syncToCloud();
+            showThanks();
         }
 
         init();
