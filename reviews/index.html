@@ -69,6 +69,7 @@
                     <input type="text" id="companyName" class="form-input" placeholder="Company Name" required>
                     <input type="text" id="techName" class="form-input" placeholder="Technician Name" required>
                     <input type="text" id="destUrl" class="form-input" placeholder="Google Review URL" required>
+                    <input type="email" id="companyEmail" class="form-input" placeholder="Company Email (for feedback alerts)" required>
                     <input type="text" id="officePhone" class="form-input" placeholder="Office Phone (for bad reviews)">
                     <label style="color:var(--gray); font-size: 0.8rem;">Upload Logo:</label>
                     <input type="file" id="logoUpload" class="form-input" accept="image/*" onchange="compressLogo(this)">
@@ -117,9 +118,11 @@
             } catch (e) { console.error("Load failed"); }
         }
 
-        async function saveDataDirectly() {
-            await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': CONFIG.API_KEY }, body: JSON.stringify(db) });
-            renderRoster(); showToast("Cloud Synced");
+        async function bulkUpdateEmail(company) {
+            const newEmail = prompt(`Enter the new alert Email for ALL technicians at ${company}:`);
+            if (!newEmail) return;
+            db.qrs.forEach(q => { if(q.company === company) q.email = newEmail; });
+            await saveDataDirectly();
         }
 
         async function bulkUpdatePhone(company) {
@@ -144,18 +147,15 @@
 
             list.innerHTML = Object.keys(grouped).map(company => {
                 const techs = grouped[company];
-                const companyScans = techs.reduce((sum, t) => sum + (t.scans || 0), 0);
-                const companyBlocked = techs.reduce((sum, t) => sum + (t.blocked || 0), 0);
                 return `
                 <div class="company-group">
                     <div class="company-header">
                         <div>
                             <span class="company-title">${company}</span>
-                            <span class="total-pill" style="background:#6366f1;">Scans: ${companyScans}</span>
-                            <span class="total-pill" style="background:#ef4444;">Caught: ${companyBlocked}</span>
                         </div>
                         <div style="display:flex; gap:8px;">
-                            <button onclick="bulkUpdatePhone('${company}')" style="background:none; border:none; color:var(--success); cursor:pointer; font-size:10px; font-weight:800;">EDIT PHONE</button>
+                            <button onclick="bulkUpdateEmail('${company}')" style="background:none; border:none; color:var(--success); cursor:pointer; font-size:10px; font-weight:800;">BULK EMAIL</button>
+                            <button onclick="bulkUpdatePhone('${company}')" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:10px; font-weight:800;">BULK PHONE</button>
                             <button onclick="resetCompanyStats('${company}')" style="background:none; border:none; color:var(--gray); cursor:pointer; font-size:10px; font-weight:800;">RESET WEEK</button>
                         </div>
                     </div>
@@ -165,7 +165,7 @@
                                 <strong>${q.name}</strong> 
                                 <span style="color:#10b981; font-weight:800; font-size:12px; margin-left:10px;">${q.scans || 0} scans</span>
                                 <span style="color:#ef4444; font-weight:800; font-size:12px; margin-left:10px;">${q.blocked || 0} caught</span>
-                                <span style="font-size:10px; color:var(--gray); display:block; margin-top:4px;">${q.lockedTo ? '🔒 Device Locked' : '🔓 Unlocked'}</span>
+                                <span style="font-size:10px; color:var(--gray); display:block; margin-top:4px;">Email: ${q.email || 'None'}</span>
                             </div>
                             <div style="display:flex; gap:8px;">
                                 <button onclick="previewById('${q.id}')" style="background:none; border:none; color:var(--success); cursor:pointer; font-weight:800; font-size:11px;">VIEW</button>
@@ -179,13 +179,8 @@
             }).join('');
         }
 
-        // Rest of functions: handleBadgeSubmit, previewById, renderPreview, downloadBadge, editBadge, deleteBadge, resetLock, resetCompanyStats, exportCSV, switchTab, showToast, compressLogo
-        // (Functionality restored as per original requirements)
-        
         async function handleBadgeSubmit(e) {
             e.preventDefault();
-            const btn = document.getElementById('submit-btn');
-            btn.disabled = true; btn.textContent = "Syncing...";
             const id = document.getElementById('edit-id').value || Math.random().toString(36).substr(2, 9);
             const existing = db.qrs.find(q => q.id === id);
             const data = {
@@ -193,6 +188,7 @@
                 company: document.getElementById('companyName').value,
                 name: document.getElementById('techName').value,
                 url: document.getElementById('destUrl').value,
+                email: document.getElementById('companyEmail').value,
                 phone: document.getElementById('officePhone').value,
                 logo: compressedLogoData || (existing ? existing.logo : ""),
                 lockedTo: existing ? existing.lockedTo : null,
@@ -203,13 +199,27 @@
             if (index > -1) db.qrs[index] = data; else db.qrs.push(data);
             await saveDataDirectly();
             renderPreview(data);
-            btn.disabled = false; btn.textContent = "Save & Sync Badge";
         }
 
-        function previewById(id) {
-            const data = db.qrs.find(q => q.id === id);
-            if(data) { renderPreview(data); switchTab('create'); window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }
+        function editBadge(id) {
+            const q = db.qrs.find(item => item.id === id);
+            document.getElementById('edit-id').value = q.id;
+            document.getElementById('companyName').value = q.company;
+            document.getElementById('techName').value = q.name;
+            document.getElementById('destUrl').value = q.url;
+            document.getElementById('companyEmail').value = q.email || "";
+            document.getElementById('officePhone').value = q.phone || "";
+            compressedLogoData = q.logo;
+            if(q.logo) { document.getElementById('prevLogo').src = q.logo; document.getElementById('prevLogo').classList.remove('hidden'); }
+            switchTab('create');
         }
+
+        async function saveDataDirectly() {
+            await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': CONFIG.API_KEY }, body: JSON.stringify(db) });
+            renderRoster(); showToast("Cloud Synced");
+        }
+
+        function previewById(id) { const data = db.qrs.find(q => q.id === id); if(data) { renderPreview(data); switchTab('create'); } }
 
         function renderPreview(data) {
             document.getElementById('prevName').textContent = data.name;
@@ -231,23 +241,10 @@
             });
         }
 
-        function editBadge(id) {
-            const q = db.qrs.find(item => item.id === id);
-            document.getElementById('edit-id').value = q.id;
-            document.getElementById('companyName').value = q.company;
-            document.getElementById('techName').value = q.name;
-            document.getElementById('destUrl').value = q.url;
-            document.getElementById('officePhone').value = q.phone || "";
-            compressedLogoData = q.logo;
-            if(q.logo) { document.getElementById('prevLogo').src = q.logo; document.getElementById('prevLogo').classList.remove('hidden'); }
-            switchTab('create');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
         async function resetLock(id) {
             const badge = db.qrs.find(q => q.id === id);
             if (badge && confirm(`Clear device lock for ${badge.name}?`)) {
-                badge.lockedTo = null; await saveDataDirectly(); showToast("Device Lock Cleared");
+                badge.lockedTo = null; await saveDataDirectly();
             }
         }
 
@@ -261,8 +258,8 @@
         function deleteBadge(id) { if (confirm("Delete this badge?")) { db.qrs = db.qrs.filter(q => q.id !== id); saveDataDirectly(); } }
 
         function exportCSV() {
-            let csv = "Company,Technician,Scans,BadReviewsCaught,URL\n";
-            db.qrs.forEach(q => { csv += `"${q.company}","${q.name}",${q.scans || 0},${q.blocked || 0},"${q.url}"\n`; });
+            let csv = "Company,Technician,Scans,BadReviewsCaught,Email,URL\n";
+            db.qrs.forEach(q => { csv += `"${q.company}","${q.name}",${q.scans || 0},${q.blocked || 0},"${q.email || ''}","${q.url}"\n`; });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
