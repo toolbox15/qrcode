@@ -3,163 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feedback | AIBizService</title>
+    <title>Rate Our Service</title>
     <style>
-        :root { --primary: #6366f1; --dark: #0f172a; --star: #fbbf24; --gray: #94a3b8; --success: #10b981; --error: #ef4444; }
-        body { font-family: sans-serif; background: var(--dark); color: white; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; text-align: center; }
-        .card { background: rgba(255,255,255,0.05); padding: 2.5rem; border-radius: 28px; max-width: 400px; width: 90%; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
-        .stars { font-size: 3.5rem; margin: 25px 0; cursor: pointer; color: #475569; display: flex; justify-content: center; gap: 8px; }
-        .star.active { color: var(--star); }
-        .btn { display: block; width: 100%; padding: 18px; border-radius: 15px; border: none; background: var(--primary); color: white; font-weight: 700; font-size: 1.1rem; cursor: pointer; text-decoration: none; margin-top: 15px; transition: 0.2s; }
-        .btn-outline { background: transparent; border: 2px solid rgba(255,255,255,0.2); margin-top: 10px; }
-        .btn-call { background: var(--error); margin-bottom: 10px; font-size: 1rem; padding: 14px; }
-        textarea { width: 100%; height: 100px; margin-top: 15px; border-radius: 15px; padding: 12px; display: none; background: #1e293b; color: white; border: 1px solid #334155; font-size: 1rem; box-sizing: border-box; }
-        .hidden { display: none !important; }
-        #loading { position: fixed; inset: 0; background: var(--dark); display: flex; align-items: center; justify-content: center; z-index: 100; font-weight: bold; }
+        :root { --primary: #6366f1; --dark: #0f172a; --text: #1e293b; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f1f5f9; color: var(--text); display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        
+        .gate-card { background: white; width: 100%; max-width: 400px; padding: 40px 30px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; }
+        .logo { max-height: 60px; margin-bottom: 20px; }
+        h2 { font-size: 1.5rem; margin-bottom: 10px; }
+        p { color: #64748b; margin-bottom: 30px; }
+
+        .stars { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; flex-direction: row-reverse; }
+        .stars input { display: none; }
+        .stars label { font-size: 2.5rem; color: #cbd5e1; cursor: pointer; transition: 0.2s; }
+        .stars label:hover, .stars label:hover ~ label, .stars input:checked ~ label { color: #fbbf24; }
+
+        .btn { display: block; width: 100%; padding: 15px; border-radius: 12px; font-weight: 700; text-decoration: none; transition: 0.2s; border: none; cursor: pointer; margin-top: 10px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-sms { background: #f8fafc; color: #6366f1; border: 1px solid #e2e8f0; font-size: 0.9rem; margin-top: 20px; }
+        
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="loading">Connecting...</div>
+    <div class="gate-card" id="gate">
+        <img id="clientLogo" src="" class="logo hidden">
+        <h2 id="companyName">Thank You!</h2>
+        <p>How was your experience with <span id="techName">our technician</span> today?</p>
 
-    <div class="card" id="mainCard">
-        <img id="logo" style="max-height: 100px; width: 100%; object-fit: contain; margin-bottom: 20px;" class="hidden">
-        <h2 id="bizName">Feedback</h2>
-        <p>How was your service with <strong id="techName">our team</strong> today?</p>
-        
-        <div id="rating-step">
-            <div class="stars">
-                <span class="star" data-val="1">★</span>
-                <span class="star" data-val="2">★</span>
-                <span class="star" data-val="3">★</span>
-                <span class="star" data-val="4">★</span>
-                <span class="star" data-val="5">★</span>
-            </div>
-
-            <div id="positive-options" class="hidden">
-                <p style="font-size: 0.9rem; color: var(--gray); margin-bottom: 10px;">Thank you! Please choose an option:</p>
-                <a id="googleBtn" class="btn">Leave Google Review</a>
-                <button class="btn btn-outline" onclick="showThanks()">I'm a Regular (Already Reviewed)</button>
-            </div>
-
-            <div id="negative-options" class="hidden">
-                <p style="font-size: 0.85rem; color: var(--gray); margin-bottom: 10px;">We're sorry to hear that. Please let us fix it:</p>
-                <a id="callBtn" class="btn btn-call hidden">📞 Call Office Now</a>
-                <textarea id="feedback" placeholder="Or describe the issue here..."></textarea>
-                <button id="submitBtn" class="btn" onclick="sendFeedback()">Submit Feedback</button>
-            </div>
+        <div class="stars">
+            <input type="radio" name="star" id="star5" value="5" onclick="handleRate(5)"><label for="star5">★</label>
+            <input type="radio" name="star" id="star4" value="4" onclick="handleRate(4)"><label for="star4">★</label>
+            <input type="radio" name="star" id="star3" value="3" onclick="handleRate(3)"><label for="star3">★</label>
+            <input type="radio" name="star" id="star2" value="2" onclick="handleRate(2)"><label for="star2">★</label>
+            <input type="radio" name="star" id="star1" value="1" onclick="handleRate(1)"><label for="star1">★</label>
         </div>
 
-        <div id="thanks-step" class="hidden">
-            <h2 style="color: var(--success);">✔ Thank You</h2>
-            <p>Your feedback has been logged privately. We value your business!</p>
-            <button class="btn btn-outline" onclick="window.location.href='https://google.com'">Close</button>
-        </div>
+        <a href="#" id="smsBtn" class="btn btn-sms">Text me this link for later</a>
     </div>
 
     <script>
-        const CONFIG = { BIN_ID: '6988ac72ae596e708f1ab357', API_KEY: '$2a$10$Rs0hwy8AsGdOhHr2VjH3j.voZoeOgcZ1ddCdfzn.63bqiKTGSW1gW' };
-        let gUrl = "";
-        let allQRs = [];
-        let currentBadge = null;
+        const CONFIG = {
+            BIN_ID: '6988ac72ae596e708f1ab357',
+            API_KEY: '$2a$10$Rs0hwy8AsGdOhHr2VjH3j.voZoeOgcZ1ddCdfzn.63bqiKTGSW1gW'
+        };
+
+        let clientData = null;
 
         async function init() {
-            const id = new URLSearchParams(window.location.search).get('id');
-            const lockKey = `auth_${id}`;
-            const myToken = localStorage.getItem(lockKey);
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            if (!id) return;
+
+            // Update SMS link immediately with the current page URL
+            document.getElementById('smsBtn').href = `sms:?&body=Please leave a review for our service: ${window.location.href}`;
 
             try {
-                const r = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, { headers: { 'X-Master-Key': CONFIG.API_KEY }, cache: 'no-store' });
+                const r = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, { 
+                    headers: { 'X-Master-Key': CONFIG.API_KEY } 
+                });
                 const d = await r.json();
-                allQRs = d.record.qrs;
-                currentBadge = allQRs.find(q => q.id === id);
+                clientData = d.record.qrs.find(q => q.id === id);
 
-                if (!currentBadge) throw new Error("Not Found");
-
-                currentBadge.scans = (currentBadge.scans || 0) + 1;
-                gUrl = currentBadge.url;
-                if (!gUrl.startsWith('http')) gUrl = `https://search.google.com/local/writereview?placeid=${gUrl}`;
-
-                if (currentBadge.lockedTo && currentBadge.lockedTo !== myToken) {
-                    document.body.innerHTML = "<div class='card'><h2>⚠️ Access Denied</h2></div>";
-                    return;
+                if (clientData) {
+                    document.getElementById('companyName').textContent = clientData.company;
+                    document.getElementById('techName').textContent = clientData.name;
+                    if (clientData.logo) {
+                        const img = document.getElementById('clientLogo');
+                        img.src = clientData.logo;
+                        img.classList.remove('hidden');
+                    }
+                    // Update SMS body with company name for a personal touch
+                    document.getElementById('smsBtn').href = `sms:?&body=Review link for ${clientData.company}: ${window.location.href}`;
                 }
-
-                if (!currentBadge.lockedTo) {
-                    const newToken = Math.random().toString(36).substr(2, 12);
-                    currentBadge.lockedTo = newToken;
-                    localStorage.setItem(lockKey, newToken);
-                }
-
-                await syncToCloud();
-
-                document.getElementById('bizName').textContent = currentBadge.company;
-                document.getElementById('techName').textContent = currentBadge.name;
-                
-                if(currentBadge.logo) { 
-                    const logoImg = document.getElementById('logo');
-                    logoImg.src = currentBadge.logo; 
-                    logoImg.classList.remove('hidden'); 
-                }
-
-                // Show Call button if phone exists
-                if(currentBadge.phone) {
-                    const cb = document.getElementById('callBtn');
-                    cb.href = `tel:${currentBadge.phone}`;
-                    cb.classList.remove('hidden');
-                }
-
-                document.getElementById('loading').style.display = "none";
-
-            } catch (e) { document.body.innerHTML = "<h2>Error</h2>"; }
+            } catch (e) { console.error("Error loading gate", e); }
         }
 
-        async function syncToCloud() {
-            await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-Master-Key': CONFIG.API_KEY },
-                body: JSON.stringify({ qrs: allQRs })
-            });
-        }
-
-        document.querySelectorAll('.star').forEach(s => {
-            s.onclick = () => {
-                const val = parseInt(s.dataset.val);
-                document.querySelectorAll('.star').forEach(star => star.classList.toggle('active', star.dataset.val <= val));
-                if (val >= 4) {
-                    document.getElementById('positive-options').classList.remove('hidden');
-                    document.getElementById('negative-options').classList.add('hidden');
-                    document.getElementById('googleBtn').href = gUrl;
-                } else {
-                    document.getElementById('positive-options').classList.add('hidden');
-                    document.getElementById('negative-options').classList.remove('hidden');
-                    document.getElementById('feedback').style.display = "block";
-                }
-            };
-        });
-
-        function showThanks() {
-            document.getElementById('rating-step').classList.add('hidden');
-            document.getElementById('thanks-step').classList.remove('hidden');
-        }
-
-        async function sendFeedback() {
-            const fbText = document.getElementById('feedback').value;
-            if(!fbText) return alert("Please share how we can improve.");
-            
-            // Log the 'Caught' review in dashboard
-            currentBadge.blocked = (currentBadge.blocked || 0) + 1;
-            await syncToCloud();
-
-            // Prepare Email Content
-            const recipient = currentBadge.email || "";
-            const subject = encodeURIComponent(`URGENT FEEDBACK: ${currentBadge.name} (${currentBadge.company})`);
-            const body = encodeURIComponent(`A customer just left negative feedback for ${currentBadge.name}.\n\nMessage:\n"${fbText}"\n\nPlease reach out to them immediately to resolve this.`);
-            
-            // Open user's email app
-            window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
-
-            showThanks();
+        function handleRate(stars) {
+            if (stars >= 4) {
+                // 4 or 5 Stars -> Send to Google Review Page
+                window.location.href = clientData.url;
+            } else {
+                // 1, 2, or 3 Stars -> Send to a Private Complaint/Feedback form
+                // You can change this URL to a contact page or a Google Form
+                window.location.href = "mailto:support@aibizservice.com?subject=Service Feedback";
+            }
         }
 
         init();
