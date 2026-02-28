@@ -6,111 +6,78 @@
     <title>AIBizService | Agency Manager</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        :root { --primary: #6366f1; --success: #10b981; --dark: #0f172a; --light: #f8fafc; --gray: #64748b; --glass: rgba(255, 255, 255, 0.03); --glass-border: rgba(255, 255, 255, 0.1); }
+        :root { --primary: #6366f1; --danger: #ef4444; --success: #10b981; --dark: #0f172a; --light: #f8fafc; --gray: #64748b; --glass: rgba(255, 255, 255, 0.03); --glass-border: rgba(255, 255, 255, 0.1); }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--light); line-height: 1.6; }
         .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
-        
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px; }
-        .header-left { display: flex; align-items: center; gap: 15px; }
-        .agency-logo { width: 55px; height: 55px; object-fit: contain; }
         .logo-text { font-size: 1.6rem; font-weight: 900; background: linear-gradient(to right, #818cf8, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
         .panel { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 24px; padding: 2rem; margin-bottom: 2rem; backdrop-filter: blur(10px); }
         .form-input { width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 12px; color: white; margin-bottom: 1rem; }
-        .btn { padding: 12px 24px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; display: inline-block; text-decoration: none; text-align: center; }
+        .btn { padding: 10px 20px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; display: inline-block; text-decoration: none; text-align: center; font-size: 14px; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-outline { background: transparent; border: 1px solid var(--glass-border); color: white; }
-        
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
+        .btn-danger:hover { background: var(--danger); color: white; }
         .nav-tabs { display: flex; gap: 8px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 16px; margin-bottom: 2rem; }
         .nav-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--gray); border-radius: 10px; cursor: pointer; font-weight: 600; }
         .nav-tab.active { background: var(--primary); color: white; }
-        
-        /* IMPROVED BADGE STYLING */
-        .tech-badge { background: white; color: var(--dark); width: 340px; padding: 40px 20px; border-radius: 28px; margin: 2rem auto; border: 1px solid #e2e8f0; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        .tech-badge { background: white; color: var(--dark); width: 340px; padding: 40px 20px; border-radius: 28px; margin: 2rem auto; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
         .client-logo-preview { width: 180px; height: 80px; object-fit: contain; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto; }
-        .tech-circle { width: 80px; height: 80px; background: var(--primary); border-radius: 50%; margin: 0 auto 15px; color: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 900; }
-        .badge-name { font-size: 1.4rem; font-weight: 800; color: #1e293b; margin-top: 10px; }
-        
         .hidden { display: none; }
         #toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 12px 24px; border-radius: 12px; display: none; z-index: 1000; }
-        @media print { body * { visibility: hidden; } #badgeExport, #badgeExport * { visibility: visible; } #badgeExport { position: absolute; left: 0; top: 0; width: 100%; border: none; box-shadow: none; } }
     </style>
 </head>
 <body>
-
     <div id="toast">Update Successful</div>
-
     <div class="container">
         <header>
-            <div class="header-left">
-                <img src="logo_shield.png" alt="AIBizService" class="agency-logo">
-                <div class="logo-text">AIBizService Admin</div>
-            </div>
+            <div class="logo-text">AIBizService Admin</div>
             <a href="../index.html" class="btn btn-outline">Exit</a>
         </header>
-
         <nav class="nav-tabs">
-            <button class="nav-tab active" onclick="switchTab('create')">Badge Creator</button>
-            <button class="nav-tab" onclick="switchTab('roster')">Team Roster</button>
+            <button class="nav-tab active" id="tab-btn-create" onclick="switchTab('create')">Badge Creator</button>
+            <button class="nav-tab" id="tab-btn-roster" onclick="switchTab('roster')">Team Roster</button>
         </nav>
-
         <div id="tab-create" class="tab-content">
             <div class="panel">
                 <h3 id="form-title" style="margin-bottom:15px;">Review Tool Setup</h3>
                 <form onsubmit="handleBadgeSubmit(event)">
                     <input type="hidden" id="edit-id">
-                    <input type="text" id="companyName" class="form-input" placeholder="Plumbing Company Name" required>
+                    <input type="text" id="companyName" class="form-input" placeholder="Company Name" required>
                     <input type="text" id="techName" class="form-input" placeholder="Technician Name" required>
-                    <input type="text" id="destUrl" class="form-input" placeholder="Google Place ID or Review URL" required>
-                    <input type="text" id="logoUrl" class="form-input" placeholder="Client Logo Image URL (Square or Wide)">
-                    
-                    <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 12px;">
-                        <input type="checkbox" id="isStandard" style="width: 20px; height: 20px;">
-                        <label for="isStandard">Standard Link (Bypass Reputation Shield)</label>
+                    <input type="text" id="destUrl" class="form-input" placeholder="Google Place ID or URL" required>
+                    <input type="text" id="logoUrl" class="form-input" placeholder="Logo URL (Dropbox fix built-in)">
+                    <div style="margin-bottom: 1rem; display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="isStandard" style="width: 18px; height: 18px;">
+                        <label for="isStandard">Bypass Shield (Direct Link)</label>
                     </div>
-                    <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%;">Create Professional Badge</button>
+                    <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%;">Create / Update Badge</button>
                 </form>
             </div>
-
             <div id="badge-preview-area" class="hidden" style="text-align: center;">
                 <div id="badgeExport" class="tech-badge">
                     <img id="prevLogo" src="" class="client-logo-preview hidden">
-                    <div class="tech-circle" id="prevInitials">??</div>
-                    
-                    <div class="badge-name" id="prevName">Name</div>
-                    <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 15px;">Verified Professional</p>
-                    
-                    <div id="qrcode" style="display: inline-block; background: white; padding: 10px; border: 1px solid #f1f5f9;"></div>
-                    <p style="margin-top: 15px; font-weight: 700; color: #475569; font-size: 0.9rem;">SCAN TO RATE SERVICE</p>
+                    <h3 id="prevName" style="margin-top:10px;">Name</h3>
+                    <div id="qrcode" style="display: inline-block; background: white; padding: 10px; margin-top: 15px;"></div>
                 </div>
-                <button class="btn btn-outline" onclick="window.print()">Print for Technician</button>
+                <button class="btn btn-outline" onclick="window.print()">Print Badge</button>
             </div>
         </div>
-
         <div id="tab-roster" class="tab-content hidden">
-            <div class="panel" id="roster-list">Loading...</div>
+            <div class="panel" id="roster-list">Loading Roster...</div>
         </div>
     </div>
-
     <script>
-        const CONFIG = {
-            BIN_ID: '6988ac72ae596e708f1ab357',
-            API_KEY: '$2a$10$Rs0hwy8AsGdOhHr2VjH3j.voZoeOgcZ1ddCdfzn.63bqiKTGSW1gW'
-        };
-
+        const CONFIG = { BIN_ID: '6988ac72ae596e708f1ab357', API_KEY: '$2a$10$Rs0hwy8AsGdOhHr2VjH3j.voZoeOgcZ1ddCdfzn.63bqiKTGSW1gW' };
         let db = { qrs: [] };
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            await loadData();
-            renderAll();
-        });
 
         async function loadData() {
             try {
                 const r = await fetch(`https://api.jsonbin.io/v3/b/${CONFIG.BIN_ID}/latest`, { headers: { 'X-Master-Key': CONFIG.API_KEY } });
                 const d = await r.json();
                 db = d.record || { qrs: [] };
+                renderAll();
             } catch (e) { console.error("Load error", e); }
         }
 
@@ -120,114 +87,90 @@
                 headers: { 'Content-Type': 'application/json', 'X-Master-Key': CONFIG.API_KEY },
                 body: JSON.stringify(db)
             });
-            showToast("Cloud Synced");
+            showToast("Cloud Updated");
+            renderAll();
         }
 
         function handleBadgeSubmit(e) {
             e.preventDefault();
             const id = document.getElementById('edit-id').value || Math.random().toString(36).substr(2, 9);
-            const isStandard = document.getElementById('isStandard').checked;
-            let rawUrl = document.getElementById('destUrl').value.trim();
-
-            if (!isStandard) {
-                // If user just pasted a Place ID, turn it into a Google Review link
-                if (rawUrl.startsWith('Ch') || (!rawUrl.includes('http') && rawUrl.length > 15)) {
-                    rawUrl = `https://search.google.com/local/writereview?placeid=${rawUrl}`;
-                }
-            }
+            let logo = document.getElementById('logoUrl').value.trim();
+            // DROPBOX FIX: Convert dl=0 to dl=1
+            if (logo.includes("dropbox.com") && logo.includes("dl=0")) logo = logo.replace("dl=0", "dl=1");
 
             const data = {
                 id,
                 company: document.getElementById('companyName').value,
                 name: document.getElementById('techName').value,
-                logo: document.getElementById('logoUrl').value,
-                url: rawUrl,
-                type: isStandard ? 'standard' : 'review'
+                logo: logo,
+                url: document.getElementById('destUrl').value,
+                type: document.getElementById('isStandard').checked ? 'standard' : 'review'
             };
 
-            const index = db.qrs.findIndex(q => q.id === id);
-            if (index > -1) db.qrs[index] = data; else db.qrs.push(data);
+            const idx = db.qrs.findIndex(q => q.id === id);
+            if (idx > -1) db.qrs[idx] = data; else db.qrs.push(data);
             
-            saveData().then(() => {
-                renderAll();
-                previewBadge(data);
-                resetForm();
-            });
+            saveData().then(() => { previewBadge(data); resetForm(); });
         }
 
-        function previewBadge(data) {
-            document.getElementById('prevName').textContent = data.name;
-            const initialsEl = document.getElementById('prevInitials');
-            const logoEl = document.getElementById('prevLogo');
-
-            // LOGO LOGIC: If logo exists, hide initials. If no logo, show initials.
-            if (data.logo && data.logo.trim() !== "") { 
-                logoEl.src = data.logo; 
-                logoEl.classList.remove('hidden'); 
-                initialsEl.classList.add('hidden');
-            } else { 
-                logoEl.classList.add('hidden'); 
-                initialsEl.textContent = data.name[0].toUpperCase();
-                initialsEl.classList.remove('hidden');
+        function deleteTech(id) {
+            if (confirm("Delete this technician? This cannot be undone.")) {
+                db.qrs = db.qrs.filter(q => q.id !== id);
+                saveData();
             }
+        }
 
-            document.getElementById('qrcode').innerHTML = "";
-            // The QR code leads to your "Gate" page
-            const finalUrl = data.type === 'standard' ? data.url : window.location.origin + "/gate/?id=" + data.id;
-            
-            new QRCode(document.getElementById('qrcode'), { 
-                text: finalUrl, 
-                width: 220, 
-                height: 220,
-                colorDark : "#0f172a",
-                colorLight : "#ffffff"
-            });
-            
-            document.getElementById('badge-preview-area').classList.remove('hidden');
-            document.getElementById('badge-preview-area').scrollIntoView({ behavior: 'smooth' });
+        function editTech(id) {
+            const data = db.qrs.find(q => q.id === id);
+            document.getElementById('edit-id').value = data.id;
+            document.getElementById('companyName').value = data.company;
+            document.getElementById('techName').value = data.name;
+            document.getElementById('destUrl').value = data.url;
+            document.getElementById('logoUrl').value = data.logo;
+            document.getElementById('isStandard').checked = (data.type === 'standard');
+            document.getElementById('submit-btn').textContent = "Update Technician";
+            switchTab('create');
         }
 
         function renderAll() {
             const companies = [...new Set(db.qrs.map(q => q.company))];
             document.getElementById('roster-list').innerHTML = companies.map(c => `
-                <div style="margin-bottom:20px;">
-                    <h4 style="color:var(--primary); margin-bottom:10px; border-bottom:1px solid var(--glass-border); padding-bottom:5px;">${c}</h4>
+                <div style="margin-bottom:25px;">
+                    <h4 style="color:var(--primary); border-bottom:1px solid var(--glass-border); padding-bottom:5px;">${c}</h4>
                     ${db.qrs.filter(q => q.company === c).map(q => `
-                        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:rgba(255,255,255,0.02); border-radius:8px; margin-bottom:8px;">
-                            <div>
-                                <strong style="display:block;">${q.name}</strong>
-                                <small style="color:var(--gray);">${q.type === 'review' ? '🛡️ Shield Active' : '🔗 Direct Link'}</small>
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:15px; background:rgba(255,255,255,0.02); margin-top:10px; border-radius:12px;">
+                            <div><strong>${q.name}</strong><br><small style="color:var(--gray)">${q.type}</small></div>
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn btn-outline" onclick="editTech('${q.id}')">Edit</button>
+                                <button class="btn btn-danger" onclick="deleteTech('${q.id}')">Delete</button>
                             </div>
-                            <button class="btn btn-outline" style="padding:6px 12px; font-size:12px;" onclick="previewById('${q.id}')">View Badge</button>
                         </div>
                     `).join('')}
                 </div>
-            `).join('') || "No team members found. Create your first badge above.";
+            `).join('') || "No tech data found.";
         }
 
-        function previewById(id) {
-            const data = db.qrs.find(q => q.id === id);
-            previewBadge(data);
-            switchTab('create');
+        function previewBadge(data) {
+            document.getElementById('prevName').textContent = data.name;
+            const logoEl = document.getElementById('prevLogo');
+            if (data.logo) { logoEl.src = data.logo; logoEl.classList.remove('hidden'); } else { logoEl.classList.add('hidden'); }
+            document.getElementById('qrcode').innerHTML = "";
+            const finalUrl = data.type === 'standard' ? data.url : window.location.origin + "/gate/?id=" + data.id;
+            new QRCode(document.getElementById('qrcode'), { text: finalUrl, width: 200, height: 200 });
+            document.getElementById('badge-preview-area').classList.remove('hidden');
         }
 
         function switchTab(tab) {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
             document.getElementById('tab-' + tab).classList.remove('hidden');
-            if (event && event.target.classList.contains('nav-tab')) event.target.classList.add('active');
+            document.getElementById('tab-btn-' + tab).classList.add('active');
         }
 
-        function showToast(m) { 
-            const t = document.getElementById('toast'); t.textContent = m; t.style.display = 'block'; 
-            setTimeout(() => t.style.display = 'none', 3000); 
-        }
-
-        function resetForm() {
-            document.querySelector('form').reset();
-            document.getElementById('edit-id').value = "";
-            document.getElementById('submit-btn').textContent = "Create Professional Badge";
-        }
+        function showToast(m) { const t = document.getElementById('toast'); t.textContent = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
+        function resetForm() { document.querySelector('form').reset(); document.getElementById('edit-id').value = ""; document.getElementById('submit-btn').textContent = "Create / Update Badge"; }
+        
+        loadData();
     </script>
 </body>
 </html>
