@@ -22,14 +22,14 @@
         .nav-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--gray); border-radius: 10px; cursor: pointer; font-weight: 600; }
         .nav-tab.active { background: var(--primary); color: white; }
         
-        /* UPDATED BADGE STYLING */
-        .tech-badge { background: white; color: var(--dark); width: 360px; padding: 40px 20px; border-radius: 28px; margin: 2rem auto; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
-        /* Logo is 25% bigger (was 180px, now 225px) */
+        /* BADGE STYLING - Logo 25% Bigger & Verified Text Included */
+        .tech-badge { background: white; color: var(--dark); width: 360px; padding: 40px 20px; border-radius: 28px; margin: 2rem auto; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.3); border: 1px solid #e2e8f0; }
         .client-logo-preview { width: 225px; height: 100px; object-fit: contain; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto; }
-        .verified-text { font-size: 0.85rem; font-weight: 700; color: var(--gray); margin-top: 15px; letter-spacing: 1px; text-transform: uppercase; }
+        .verified-footer { margin-top: 15px; font-size: 0.85rem; font-weight: 800; color: #64748b; letter-spacing: 1.5px; text-transform: uppercase; border-top: 1px solid #f1f5f9; padding-top: 15px; }
         
         .hidden { display: none; }
         #toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 12px 24px; border-radius: 12px; display: none; z-index: 1000; }
+        @media print { body * { visibility: hidden; } #badgeExport, #badgeExport * { visibility: visible; } #badgeExport { position: absolute; left: 0; top: 0; width: 100%; border: none; box-shadow: none; } }
     </style>
 </head>
 <body>
@@ -45,16 +45,16 @@
         </nav>
         <div id="tab-create" class="tab-content">
             <div class="panel">
-                <h3 id="form-title" style="margin-bottom:15px;">Review Tool Setup</h3>
+                <h3 style="margin-bottom:15px;">Review Tool Setup</h3>
                 <form onsubmit="handleBadgeSubmit(event)">
                     <input type="hidden" id="edit-id">
                     <input type="text" id="companyName" class="form-input" placeholder="Company Name" required>
                     <input type="text" id="techName" class="form-input" placeholder="Technician Name" required>
                     <input type="text" id="destUrl" class="form-input" placeholder="Google Place ID or URL" required>
-                    <input type="text" id="logoUrl" class="form-input" placeholder="Logo URL (Dropbox links auto-fix)">
+                    <input type="text" id="logoUrl" class="form-input" placeholder="Logo URL (Dropbox auto-fix)">
                     <div style="margin-bottom: 1rem; display: flex; align-items: center; gap: 10px;">
                         <input type="checkbox" id="isStandard" style="width: 18px; height: 18px;">
-                        <label for="isStandard">Standard Link (Bypass Reputation Shield)</label>
+                        <label for="isStandard">Standard Link (Bypass Shield)</label>
                     </div>
                     <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%;">Create / Update Badge</button>
                 </form>
@@ -62,9 +62,9 @@
             <div id="badge-preview-area" class="hidden" style="text-align: center;">
                 <div id="badgeExport" class="tech-badge">
                     <img id="prevLogo" src="" class="client-logo-preview hidden">
-                    <h3 id="prevName" style="margin-top:10px; font-weight:800; font-size:1.5rem;">Name</h3>
-                    <div id="qrcode" style="display: inline-block; background: white; padding: 10px; margin-top: 15px;"></div>
-                    <div class="verified-text">Verified Technician</div>
+                    <h3 id="prevName" style="margin-top:10px; font-weight:900; font-size:1.6rem; color:#1e293b;">Name</h3>
+                    <div id="qrcode" style="display: inline-block; background: white; padding: 10px; margin-top: 15px; border: 1px solid #f1f5f9;"></div>
+                    <div class="verified-footer">✓ Verified Technician</div>
                 </div>
                 <button class="btn btn-outline" onclick="window.print()">Print for Technician</button>
             </div>
@@ -117,23 +117,17 @@
             saveData().then(() => { previewBadge(data); resetForm(); });
         }
 
-        function deleteTech(id) {
-            if (confirm("Delete this technician?")) {
-                db.qrs = db.qrs.filter(q => q.id !== id);
-                saveData();
-            }
-        }
-
-        function editTech(id) {
-            const data = db.qrs.find(q => q.id === id);
-            document.getElementById('edit-id').value = data.id;
-            document.getElementById('companyName').value = data.company;
-            document.getElementById('techName').value = data.name;
-            document.getElementById('destUrl').value = data.url;
-            document.getElementById('logoUrl').value = data.logo;
-            document.getElementById('isStandard').checked = (data.type === 'standard');
-            document.getElementById('submit-btn').textContent = "Update Technician";
-            switchTab('create');
+        function previewBadge(data) {
+            document.getElementById('prevName').textContent = data.name;
+            const logoEl = document.getElementById('prevLogo');
+            if (data.logo) { logoEl.src = data.logo; logoEl.classList.remove('hidden'); } else { logoEl.classList.add('hidden'); }
+            document.getElementById('qrcode').innerHTML = "";
+            
+            const currentPath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+            const finalUrl = data.type === 'standard' ? data.url : currentPath + "gate/index.html?id=" + data.id;
+            
+            new QRCode(document.getElementById('qrcode'), { text: finalUrl, width: 220, height: 220 });
+            document.getElementById('badge-preview-area').classList.remove('hidden');
         }
 
         function renderAll() {
@@ -154,27 +148,20 @@
             `).join('') || "No tech data found.";
         }
 
-        function previewBadge(data) {
-            document.getElementById('prevName').textContent = data.name;
-            const logoEl = document.getElementById('prevLogo');
-            if (data.logo) { logoEl.src = data.logo; logoEl.classList.remove('hidden'); } else { logoEl.classList.add('hidden'); }
-            document.getElementById('qrcode').innerHTML = "";
-            
-            // Ensure the URL correctly points to the 'gate' folder to prevent 404
-            const currentPath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-            const finalUrl = data.type === 'standard' ? data.url : currentPath + "gate/?id=" + data.id;
-            
-            new QRCode(document.getElementById('qrcode'), { text: finalUrl, width: 200, height: 200 });
-            document.getElementById('badge-preview-area').classList.remove('hidden');
+        function editTech(id) {
+            const data = db.qrs.find(q => q.id === id);
+            document.getElementById('edit-id').value = data.id;
+            document.getElementById('companyName').value = data.company;
+            document.getElementById('techName').value = data.name;
+            document.getElementById('destUrl').value = data.url;
+            document.getElementById('logoUrl').value = data.logo;
+            document.getElementById('isStandard').checked = (data.type === 'standard');
+            document.getElementById('submit-btn').textContent = "Update Technician";
+            switchTab('create');
         }
 
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('tab-' + tab).classList.remove('hidden');
-            document.getElementById('tab-btn-' + tab).classList.add('active');
-        }
-
+        function deleteTech(id) { if (confirm("Delete this technician?")) { db.qrs = db.qrs.filter(q => q.id !== id); saveData(); } }
+        function switchTab(tab) { document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden')); document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active')); document.getElementById('tab-' + tab).classList.remove('hidden'); document.getElementById('tab-btn-' + tab).classList.add('active'); }
         function showToast(m) { const t = document.getElementById('toast'); t.textContent = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); }
         function resetForm() { document.querySelector('form').reset(); document.getElementById('edit-id').value = ""; document.getElementById('submit-btn').textContent = "Create / Update Badge"; }
         
