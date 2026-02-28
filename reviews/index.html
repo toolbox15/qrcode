@@ -18,12 +18,16 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-outline { background: transparent; border: 1px solid var(--glass-border); color: white; }
         .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
-        .btn-danger:hover { background: var(--danger); color: white; }
         .nav-tabs { display: flex; gap: 8px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 16px; margin-bottom: 2rem; }
         .nav-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--gray); border-radius: 10px; cursor: pointer; font-weight: 600; }
         .nav-tab.active { background: var(--primary); color: white; }
-        .tech-badge { background: white; color: var(--dark); width: 340px; padding: 40px 20px; border-radius: 28px; margin: 2rem auto; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
-        .client-logo-preview { width: 180px; height: 80px; object-fit: contain; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto; }
+        
+        /* UPDATED BADGE STYLING */
+        .tech-badge { background: white; color: var(--dark); width: 360px; padding: 40px 20px; border-radius: 28px; margin: 2rem auto; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        /* Logo is 25% bigger (was 180px, now 225px) */
+        .client-logo-preview { width: 225px; height: 100px; object-fit: contain; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto; }
+        .verified-text { font-size: 0.85rem; font-weight: 700; color: var(--gray); margin-top: 15px; letter-spacing: 1px; text-transform: uppercase; }
+        
         .hidden { display: none; }
         #toast { position: fixed; bottom: 20px; right: 20px; background: var(--success); color: white; padding: 12px 24px; border-radius: 12px; display: none; z-index: 1000; }
     </style>
@@ -47,10 +51,10 @@
                     <input type="text" id="companyName" class="form-input" placeholder="Company Name" required>
                     <input type="text" id="techName" class="form-input" placeholder="Technician Name" required>
                     <input type="text" id="destUrl" class="form-input" placeholder="Google Place ID or URL" required>
-                    <input type="text" id="logoUrl" class="form-input" placeholder="Logo URL (Dropbox fix built-in)">
+                    <input type="text" id="logoUrl" class="form-input" placeholder="Logo URL (Dropbox links auto-fix)">
                     <div style="margin-bottom: 1rem; display: flex; align-items: center; gap: 10px;">
                         <input type="checkbox" id="isStandard" style="width: 18px; height: 18px;">
-                        <label for="isStandard">Bypass Shield (Direct Link)</label>
+                        <label for="isStandard">Standard Link (Bypass Reputation Shield)</label>
                     </div>
                     <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%;">Create / Update Badge</button>
                 </form>
@@ -58,10 +62,11 @@
             <div id="badge-preview-area" class="hidden" style="text-align: center;">
                 <div id="badgeExport" class="tech-badge">
                     <img id="prevLogo" src="" class="client-logo-preview hidden">
-                    <h3 id="prevName" style="margin-top:10px;">Name</h3>
+                    <h3 id="prevName" style="margin-top:10px; font-weight:800; font-size:1.5rem;">Name</h3>
                     <div id="qrcode" style="display: inline-block; background: white; padding: 10px; margin-top: 15px;"></div>
+                    <div class="verified-text">Verified Technician</div>
                 </div>
-                <button class="btn btn-outline" onclick="window.print()">Print Badge</button>
+                <button class="btn btn-outline" onclick="window.print()">Print for Technician</button>
             </div>
         </div>
         <div id="tab-roster" class="tab-content hidden">
@@ -95,8 +100,7 @@
             e.preventDefault();
             const id = document.getElementById('edit-id').value || Math.random().toString(36).substr(2, 9);
             let logo = document.getElementById('logoUrl').value.trim();
-            // DROPBOX FIX: Convert dl=0 to dl=1
-            if (logo.includes("dropbox.com") && logo.includes("dl=0")) logo = logo.replace("dl=0", "dl=1");
+            if (logo.includes("dl=0")) logo = logo.replace("dl=0", "dl=1");
 
             const data = {
                 id,
@@ -114,7 +118,7 @@
         }
 
         function deleteTech(id) {
-            if (confirm("Delete this technician? This cannot be undone.")) {
+            if (confirm("Delete this technician?")) {
                 db.qrs = db.qrs.filter(q => q.id !== id);
                 saveData();
             }
@@ -155,7 +159,11 @@
             const logoEl = document.getElementById('prevLogo');
             if (data.logo) { logoEl.src = data.logo; logoEl.classList.remove('hidden'); } else { logoEl.classList.add('hidden'); }
             document.getElementById('qrcode').innerHTML = "";
-            const finalUrl = data.type === 'standard' ? data.url : window.location.origin + "/gate/?id=" + data.id;
+            
+            // Ensure the URL correctly points to the 'gate' folder to prevent 404
+            const currentPath = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+            const finalUrl = data.type === 'standard' ? data.url : currentPath + "gate/?id=" + data.id;
+            
             new QRCode(document.getElementById('qrcode'), { text: finalUrl, width: 200, height: 200 });
             document.getElementById('badge-preview-area').classList.remove('hidden');
         }
